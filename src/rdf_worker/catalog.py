@@ -50,6 +50,7 @@ from .storage import Database
 CATALOG = Catalog(
     name="rdf",
     default_schema="main",
+    source_url=CATALOG_TAGS["vgi.source_url"],
     comment=DESCRIPTION,
     tags=CATALOG_TAGS,
     schemas=[
