@@ -1,0 +1,1 @@
+"""VGI rdf worker package."""

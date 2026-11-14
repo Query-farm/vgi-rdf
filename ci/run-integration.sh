@@ -16,7 +16,7 @@
 #   PYTHON            command for the mock API, may contain spaces (default: python3)
 #   MIN_EXECUTED      fail if fewer test cases ran (default: 1)
 #   EXPECTED_SKIP_REASONS  newline-separated skip reasons that are allowed,
-#                     e.g. "require-env STARTER_LIVE". Any other skip fails.
+#                     e.g. "require-env RDF_LIVE". Any other skip fails.
 #   RECIPES_WORKER    command that runs a recipe by name (`$RECIPES_WORKER <recipe>`);
 #                     when set, examples/test/*.test run too (stdio/launch only)
 #   KEEP_STAGE=1      keep the staged test tree for debugging
@@ -73,22 +73,35 @@ start_server() {
 
 # The mock APIs fetch_items is tested against. The plain one rate-limits every
 # page once (429 + Retry-After) so the retry path is always exercised.
-unset STARTER_API_TOKEN
+unset RDF_API_TOKEN
 MOCK_API_FLAKY=1 start_server "$STAGE/mock.log" $PYTHON "$REPO/test/mock_api/server.py"
-export STARTER_MOCK_API="http://127.0.0.1:$PORT"
+export RDF_MOCK_API="http://127.0.0.1:$PORT"
 MOCK_API_TOKEN=test-token start_server "$STAGE/mock-auth.log" $PYTHON "$REPO/test/mock_api/server.py"
-export STARTER_MOCK_API_AUTH="http://127.0.0.1:$PORT"
+export RDF_MOCK_API_AUTH="http://127.0.0.1:$PORT"
 
 HTTP=0
 case "$TRANSPORT" in
-  stdio)  export STARTER_WORKER="$WORKER" ;;
-  launch) export STARTER_WORKER="launch:$WORKER" ;;
+  stdio)  export RDF_WORKER="$WORKER" ;;
+  launch) export RDF_WORKER="launch:$WORKER" ;;
   http)
     HTTP=1
-    start_server "$STAGE/worker.log" "$WORKER" --http --port 0
-    export STARTER_WORKER="http://127.0.0.1:$PORT"
+    start_server "$STAGE/worker.log" "$WORKER" --http --host 127.0.0.1 --port 0
+    export RDF_WORKER="http://127.0.0.1:$PORT"
     ;;
   *) echo "::error::unknown TRANSPORT=$TRANSPORT (expected stdio|launch|http)"; exit 1 ;;
+esac
+
+# Preserve the starter's original regression suite on its own example worker.
+# The product worker exposes only RDF functionality.
+STARTER_WORKER="${WORKER%/*}/vgi-rdf-example-worker"
+[[ "$WORKER" = *.exe ]] && STARTER_WORKER="$STARTER_WORKER.exe"
+case "$TRANSPORT" in
+  stdio) export RDF_STARTER_WORKER="$STARTER_WORKER" ;;
+  launch) export RDF_STARTER_WORKER="launch:$STARTER_WORKER" ;;
+  http)
+    start_server "$STAGE/starter.log" "$STARTER_WORKER" --http --host 127.0.0.1 --port 0
+    export RDF_STARTER_WORKER="http://127.0.0.1:$PORT"
+    ;;
 esac
 
 # Stage the tests, rewriting `require vgi` into a signed INSTALL + LOAD (the
@@ -124,10 +137,10 @@ EOF
 rm -f "$STAGE/test/_warm.test"
 
 cat > "$STAGE/no_error_skip.json" <<'EOF'
-{"skip_error_messages": ["__vgi_starter_never_matches__"]}
+{"skip_error_messages": ["__vgi_rdf_never_matches__"]}
 EOF
 
-echo "Running test/sql over $TRANSPORT (worker: $STARTER_WORKER)"
+echo "Running test/sql over $TRANSPORT (worker: $RDF_WORKER)"
 LOG="$STAGE/unittest.log"
 rc=0
 ( cd "$STAGE" && "$HAYBARN_UNITTEST" --keep-home --test-dir "$STAGE" \

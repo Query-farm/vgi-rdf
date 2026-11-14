@@ -1,0 +1,6 @@
+@prefix ex: <https://example.org/> .
+
+ex:alice ex:knows ex:bob, ex:dana ; ex:name "Alice"@en .
+ex:bob ex:knows ex:carol ; ex:name "Bob"@en .
+ex:carol ex:knows ex:alice ; ex:name "Carole"@fr .
+ex:dana ex:name "Dana"@en .

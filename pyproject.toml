@@ -1,19 +1,24 @@
 [project]
-name = "vgi-starter-worker"
-version = "0.1.0"
-description = "A VGI worker for DuckDB, generated from the Query.Farm VGI starter template."
+name = "vgi-rdf-worker"
+version = "0.2.0"
+description = "Transactional RDF-backed SQL tables, SPARQL queries and graph traversal through VGI."
 readme = "README.md"
-license = "MIT-0"
+license = "0BSD"
 license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
+    "duckdb==2.0.0",
+    "filelock>=3.20,<4",
+    "pyoxigraph>=0.5.12,<0.6",
     # [http] adds the HTTP transport (`--http`) used by Docker deploys.
     # SDK bumps go through the template (minor bumps can raise the protocol).
     "vgi-python[http]>=0.51.1,<0.52",
 ]
 
 [project.scripts]
-vgi-starter-worker = "starter_worker.worker:main"
+vgi-rdf-worker = "rdf_worker.worker:main"
+vgi-rdf-admin = "rdf_worker.admin:main"
+vgi-rdf-example-worker = "rdf_worker.starter:main"
 
 [dependency-groups]
 dev = [
@@ -31,7 +36,7 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/starter_worker"]
+packages = ["src/rdf_worker"]
 
 [tool.ruff]
 line-length = 120

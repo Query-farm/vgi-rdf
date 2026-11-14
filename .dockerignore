@@ -6,3 +6,6 @@
 .ruff_cache/
 .pytest_cache/
 dist/
+data/
+.env
+deploy/.env

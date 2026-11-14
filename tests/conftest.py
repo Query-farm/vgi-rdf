@@ -6,8 +6,11 @@ import subprocess
 import sys
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
+import duckdb
 import pytest
+from sql_support import connection
 from vgi.client import Client
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -16,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 @pytest.fixture(scope="session")
 def client() -> Iterator[Client]:
     """A client that launches the worker as a subprocess, the way DuckDB does."""
-    with Client([sys.executable, "-m", "starter_worker.worker"]) as c:
+    with Client([sys.executable, "-m", "rdf_worker.starter"]) as c:
         yield c
 
 
@@ -34,3 +37,19 @@ def mock_api() -> Iterator[str]:
     yield f"http://127.0.0.1:{line.removeprefix('PORT:')}"
     proc.terminate()
     proc.wait(timeout=10)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def install_extension() -> None:
+    with duckdb.connect() as c:
+        c.execute("SET allow_extension_repositories='allowed'")
+        c.execute(
+            "CREATE EXTENSION REPOSITORY IF NOT EXISTS query_farm WITH PREFIX 'https://duckdb-extensions.query.farm'"
+        )
+        c.execute("INSTALL vgi FROM query_farm")
+
+
+@pytest.fixture
+def sql(tmp_path: Path) -> Iterator[Any]:
+    with connection(tmp_path / "rdf") as c:
+        yield c

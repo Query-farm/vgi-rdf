@@ -1,314 +1,311 @@
-<!-- managed-by: vgi-starters (edit upstream in shared/README.md.tmpl, then run tools/render.py) -->
-<p align="center">
-  <img src="https://query.farm/media-kit/products/vgi/vgi-logo.png" alt="Vector Gateway Interface (VGI)" width="320">
-</p>
+# vgi-rdf
 
-<p align="center"><em>A Query.Farm VGI worker for DuckDB, written in Python.</em></p>
+A Python VGI worker that exposes **persistent SQL tables and graph queries over the same Oxigraph RDF dataset**. Use ordinary `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE TABLE`, and `DROP TABLE` from DuckDB or Haybarn, alongside SPARQL and graph traversal. Foreign keys become RDF edges that stay consistent with SQL transactions.
 
-# VGI Starter Worker — Python
+Version 0.2 targets a single host with local durable storage and authenticated clients in one trust domain. It includes crash recovery, bounded query execution, backup/restore, integrity checks and container deployment. The validated workload is 100,000 rows; capacity and latency for a different workload require measurement. This is not a distributed database or a service with an established uptime SLA.
 
-[![CI](https://github.com/Query-farm/vgi-starter-python/actions/workflows/ci.yml/badge.svg)](https://github.com/Query-farm/vgi-starter-python/actions/workflows/ci.yml)
-[![vgi worker: query.farm](https://query.farm/media-kit/shields/vgi-worker.svg)](https://query.farm)
+## Run locally
 
-[VGI](https://query.farm/vgi) lets DuckDB call functions that live in a separate
-process: your code, in any language, exposed as ordinary SQL. This worker adds
-three example functions that you rename and replace with your own:
+Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/). The lockfile pins the tested dependencies.
 
-| Function | Kind | Shows you how to |
-|---|---|---|
-| `greet(name)` / `greet(name, style)` | scalar | vectorize over a column, overload, constrain a constant |
-| `sequence_table(count, step := 1)` | table | stream rows in batches, take named arguments |
-| `fetch_items(base_url, page_size := 100)` | table | page through a REST API, retry, read a secret |
-
-<!-- template-only:start -->
-## Use this template
-
-This repository is a **template**. Click **Use this template** on GitHub, or:
-
-```bash
-gh repo create my-org/weather-worker --template Query-farm/vgi-starter-python --private --clone
-cd weather-worker
-make init NAME=weather     # renames catalog, package, binary, env vars; removes this section
-make check                 # lint + tests over every transport + metadata score
-```
-
-Prefer to work with an AI coding agent? `make init` first, then hand it
-[AGENTS.md](AGENTS.md). See [Using with coding agents](#using-with-coding-agents).
-
-Starters exist for [Python](https://github.com/Query-farm/vgi-starter-python),
-[TypeScript](https://github.com/Query-farm/vgi-starter-typescript),
-[Go](https://github.com/Query-farm/vgi-starter-go),
-[Rust](https://github.com/Query-farm/vgi-starter-rust),
-[Java](https://github.com/Query-farm/vgi-starter-java) and
-[C#](https://github.com/Query-farm/vgi-starter-csharp). They are generated from
-[Query-farm/vgi-starters](https://github.com/Query-farm/vgi-starters); send
-changes there.
-<!-- template-only:end -->
-
-## Quick start
-
-**Prerequisites:** Python 3.13+ and [uv](https://docs.astral.sh/uv/) (it runs the SQL
-test runner and the metadata checker).
-
-```bash
+```sh
+git clone https://github.com/Query-farm/vgi-rdf.git
+cd vgi-rdf
 make build
 ```
 
-Then open DuckDB 2.0 or [Haybarn](https://query.farm/products/haybarn) and attach the
-worker. `LOCATION` is the command DuckDB runs to start it; use an absolute path,
-because a relative one resolves against DuckDB's working directory.
-
-**DuckDB 2.0:**
+In **stock DuckDB 2.0.0**:
 
 ```sql
 SET allow_extension_repositories = 'allowed';
-CREATE EXTENSION REPOSITORY IF NOT EXISTS query_farm WITH PREFIX 'https://duckdb-extensions.query.farm';
+CREATE EXTENSION REPOSITORY IF NOT EXISTS query_farm
+    WITH PREFIX 'https://duckdb-extensions.query.farm';
 INSTALL vgi FROM query_farm;
 LOAD vgi FROM query_farm;
-ATTACH 'starter' (TYPE vgi, LOCATION '/abs/path/to/vgi-starter-python/.venv/bin/vgi-starter-worker');
+
+ATTACH 'rdf' AS rdf (
+    TYPE vgi,
+    LOCATION 'uv run --frozen vgi-rdf-worker',
+    database 'data/example'
+);
+
+CREATE TABLE rdf.main.people (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    visits INTEGER DEFAULT 0
+);
+INSERT INTO rdf.main.people(id, name) VALUES (1, 'Ada'), (2, 'Grace');
+SELECT * FROM rdf.main.people ORDER BY id;
+UPDATE rdf.main.people SET visits = visits + 1 WHERE id = 1 RETURNING *;
+DELETE FROM rdf.main.people WHERE id = 2;
+DROP TABLE rdf.main.people;
+DETACH rdf;
 ```
 
-**Haybarn 2.0** (`uvx haybarn-cli`):
+Run the SQL client from this checkout for this development launch. `database` is a **directory on the worker's machine**, not a Turtle file. Omitting it uses `VGI_RDF_DATABASE` if set; otherwise the worker creates an isolated temporary database and removes it on `DETACH`. Persistent directories survive worker restarts and reattachment.
 
-```sql
-INSTALL vgi FROM community;
-LOAD vgi;
-ATTACH 'starter' (TYPE vgi, LOCATION '/abs/path/to/vgi-starter-python/.venv/bin/vgi-starter-worker');
-```
+In **Haybarn 2.0.0rc11**, install/load the extension with `INSTALL vgi FROM community; LOAD vgi;`, then use the same `ATTACH`. Run `FORCE INSTALL` from the appropriate repository if a stale installed extension speaks an older protocol.
 
-Now call the functions:
+Attach an existing store with `read_only true` to reject all table, schema, and row mutations. Worker stdout is reserved for Arrow IPC; diagnostics go to stderr.
 
-```sql
-SELECT starter.main.greet('Ada');                         -- Hi, Ada!
-SELECT starter.main.greet('Ada', 'formal');               -- Good day, Ada.
-SELECT * FROM starter.main.sequence_table(5, step := 2) ORDER BY n;
-```
+## SQL behavior
 
-`fetch_items` pages through a REST API. Try it against the public demo API (25 fixed items):
-
-```sql
-SELECT category, count(*) AS items, round(avg(price), 2) AS avg_price
-FROM starter.main.fetch_items('https://vgi-starter-api.query-farm.services/v1')
-GROUP BY category ORDER BY category;
-```
-
-If an older cached extension misbehaves, refresh it with `FORCE INSTALL vgi FROM query_farm;`
-(DuckDB) or `FORCE INSTALL vgi FROM community;` (Haybarn).
-
-## Using it in a pipeline
-
-Worker functions compose with everything else in DuckDB:
-
-```sql
--- Materialize an API into a local table.
-CREATE TABLE items AS SELECT * FROM starter.main.fetch_items('https://vgi-starter-api.query-farm.services/v1');
-
--- Join it with local files.
-SELECT i.name, i.price, s.units
-FROM items i JOIN 'sales.parquet' s ON s.item_id = i.id;
-
--- Call a scalar per row of another table.
-SELECT customer, starter.main.greet(customer, 'formal') FROM read_csv('customers.csv');
-```
-
-## Project layout
-
-```
-src/starter_worker/
-  worker.py        # assembles the catalog; add new functions to FUNCTIONS
-  meta.py          # catalog/schema metadata + helpers (object_tags, column)
-  greet.py         # scalar example (overloads, ConstParam choices)
-  sequence.py      # table function example (named args, streaming state)
-  fetch_items.py   # REST API table function (pagination, retries, secrets)
-tests/             # pytest unit tests (in-process client)
-test/sql/          # sqllogictest files run through DuckDB
-test/mock_api/     # offline mock of the REST API used by tests
-examples/          # recipes: pushdown, caching, catalog tables, aggregates, COPY …
-ci/                # integration harness used by `make test-sql` and CI
-scripts/           # vgi_template.py (init / template-diff)
-vgi-agent-tests.yaml  # private graders for the agent test tasks
-```
-
-## Adding a function
-
-1. Create `src/starter_worker/<name>.py`. Copy the closest example: `greet.py` for a
-   scalar, `sequence.py` for a generator, `fetch_items.py` for an API.
-2. Declare arguments with `Annotated[..., Param(...)]`/`ConstParam(...)` (scalars) or a
-   frozen dataclass of `Annotated[..., Arg(...)]` (table functions). Use `Arg(0, ...)`
-   for positional arguments and `Arg("name", default=...)` for named ones.
-3. Give the class a `class Meta` with `name`, `description`, `tags=object_tags(...)`
-   and `examples`.
-4. Add the class to `FUNCTIONS` in `src/starter_worker/worker.py`.
-
-**Which kind of function?**
-
-| You want to… | Use |
+| Surface | Behavior |
 |---|---|
-| compute one value per input row | a **scalar** function |
-| return a set of rows from arguments (an API, a file, a generator) | a **table** function |
-| transform or aggregate the rows of a query | a **table in-out** function or an **aggregate** |
-| expose a fixed dataset by name (`SELECT * FROM starter.main.t`) | a **catalog table** |
-| write data out to a file or service | `COPY … TO` with a copy function |
-| accept `INSERT` / `UPDATE` / `DELETE` | a catalog table with insert/update/delete functions |
+| `SELECT` | Projection is pushed into the scan; filtering, joins, grouping, aggregates, ordering, subqueries and windows run in the host. A scan evaluates once into a bounded Arrow spool, then emits batches of up to 2,048 rows. |
+| `CREATE TABLE` | Typed columns, defaults, `NOT NULL`, primary keys, unique keys, immediate foreign keys, `IF NOT EXISTS`, `OR REPLACE`, and `AS SELECT`. |
+| `INSERT` | Column lists, defaults, multiple values and `INSERT … SELECT`; duplicate rows remain distinct when no unique key prevents them. |
+| `UPDATE` | SQL predicates and expressions; stable internal row identities allow updating duplicate rows without requiring a primary key. |
+| `DELETE` | Deletes only matching row identities; omitted predicates delete all rows. |
+| `RETURNING` | Insert/update returned rows, plus delete returned rows on a compatible engine. The worker also implements VGI OLD/NEW change results. |
+| `DROP TABLE` | Transactional removal of metadata and rows; `IF EXISTS`, dependency rejection, and `CASCADE`. Cascading a referenced table removes dependent foreign-key constraints and preserves child tables. |
+| Schemas | `CREATE SCHEMA`, `DROP SCHEMA`, `IF EXISTS`, `IF NOT EXISTS` and `CASCADE`; one schema component, including quoted names containing dots. `main` cannot be dropped. |
+| Constraints | Composite keys; multiple NULLs allowed by UNIQUE; primary keys imply NOT NULL. Foreign keys use MATCH SIMPLE with immediate NO ACTION/RESTRICT enforcement on both child and parent writes. |
 
-The [examples/](examples/) folder has a recipe for most of these. Writable tables have no
-recipe:
+Identifiers follow DuckDB's ASCII case-insensitive matching while preserving original spelling. Names are never interpolated into RDF queries without term encoding. Schema/table names travel as separate components. A user column named `rowid` or `__rdf_rowid` does not collide with internal row identity.
 
-A writable table is a catalog `Table` that names a table in-out function per operation in
-`insert_function`, `update_function` and `delete_function`, with the richest result each one
-produces in `write_result_modes`. The helpers in `vgi.write_results` (`write_options`,
-`write_result_schema`, `write_result_batch`, `row_id_field`) read DuckDB's `write_options`
-argument and build the result. UPDATE and DELETE need a scan function that emits
-`row_id_field()` and declares projection pushdown. Transactions: override `attach_supports_transactions`
-and `catalog_transaction_begin` / `_commit` / `_rollback` on the catalog. Since VGI protocol 3.3
-a table's scan and write functions are table-only: hidden from `duckdb_functions()` and not
-callable from SQL. Set `expose_scan=True` on the table to keep the scan callable as an ordinary
-table function too (write functions never are). See
-[Writable tables](https://github.com/Query-farm/vgi-python/blob/main/docs/catalog-interface.md#writable-tables)
-in the vgi-python docs.
+The backend implements CHECK expressions and canonical constraint ADD/DROP/RENAME/REPLACE, validates existing rows before accepting a new constraint, and guards changes with a definition revision. SQL availability depends on the engine's VGI adapter; see the limitations below.
 
-## Secrets and configuration
-
-`fetch_items` shows the recommended pattern. A bearer token comes from a DuckDB secret
-when one exists, and from an environment variable otherwise:
+## Transactions and concurrency
 
 ```sql
-CREATE SECRET (TYPE starter_api, TOKEN 'your-token');      -- per session, never logged
+BEGIN;
+INSERT INTO rdf.main.people(id, name) VALUES (3, 'Lin');
+UPDATE rdf.main.people SET visits = 10 WHERE id = 3;
+ROLLBACK; -- neither write persists
 ```
 
-```bash
-STARTER_API_TOKEN=your-token make run-http                # for servers and containers
+Each transaction pins an immutable committed generation. Its first write creates a private Oxigraph backup using hard links to immutable RocksDB files where supported. Subsequent batches see their own writes. Commit flushes the store and atomically publishes a new generation pointer; rollback discards the private store. DDL participates in the same transaction.
+
+Different worker processes share filesystem transaction records and locks. No connection or data state is held only in a Python global. Readers retain a consistent snapshot while other clients commit. Writers use a **database-wide optimistic conflict check**: if another writer has committed since the snapshot began, commit fails with a serialization conflict. Retry the whole transaction. This deliberately favors correctness over concurrent writer throughput.
+
+Scans freeze a statement snapshot, including inside explicit transactions. `INSERT INTO t SELECT … FROM t` therefore does not keep discovering its own newly inserted rows. An error in any write batch aborts the transaction, so earlier batches of a failed statement cannot leak into committed data. Commit and rollback are idempotent, including recovery after publication interrupted the commit receipt write.
+
+The directory layout is:
+
+```text
+CURRENT.json                 # atomically published generation and format version
+versions/<generation>/       # immutable committed Oxigraph databases
+transactions/<id>/state.json # persistent transaction state and commit receipts
+transactions/<id>/data/      # private writable Oxigraph database, when needed
+transactions/<id>/scans/     # statement snapshots, removed at commit/rollback
 ```
 
-Try it: the demo API's `/v1/auth` endpoint needs the published token `demo-token`.
+Use a local filesystem with reliable locking, atomic rename and sufficient free space for private generations and statement spools. macOS ARM64 and Linux ARM64 in Docker were tested locally; Windows CI is configured but has not been run in this checkout. Network filesystems, multi-host shared volumes and Windows durability are outside the validated deployment profile. POSIX directory entries and commit pointers are fsynced. Recovery tests kill processes at publication boundaries and inject disk-full failures; they do not simulate every hardware or power-loss fault.
+
+## RDF representation and types
+
+The catalog is the named graph `<urn:vgi:rdf:catalog>`. Every table has a stable resource and a separate row graph. Each row has a resource IRI and a numeric row-ID statement, even when every SQL column is NULL. Each non-NULL cell becomes a column-property statement. SQL NULL means the property is absent; duplicate SQL rows have different resource IRIs.
+
+Primitive cells use RDF literals with XSD datatypes: strings, booleans, integers, decimal, double, date, time, dateTime and base64Binary. Decimal scale and nanosecond timestamp/time precision survive round trips. Nested/list/map/interval cells and values outside Python's datetime range use the private literal datatype `urn:vgi:rdf:arrowIPC`, containing a base64-encoded one-cell Arrow stream. The catalog retains the exact Arrow schema and logical-type metadata in RDF.
+
+`urn:vgi:rdf:relationships` contains child-row → foreign-key predicate → parent-row edges, including composite keys. Row identities survive updates. SQL mutations, constraint changes, rollback and cascading table drops maintain these edges transactionally. `urn:vgi:rdf:key-index` stores derived primary/unique-key hash buckets as RDF; exact SQL equality checks resolve collisions. Indexes use DuckDB 2.0.0 equality/hash semantics, so that dependency is pinned. Mapping version 2 records these derived graphs in the catalog.
 
 ```sql
-SELECT count(*) FROM starter.main.fetch_items('https://vgi-starter-api.query-farm.services/v1/auth');   -- fails: HTTP 401
-CREATE SECRET (TYPE starter_api, TOKEN 'demo-token');
-SELECT count(*) FROM starter.main.fetch_items('https://vgi-starter-api.query-farm.services/v1/auth');   -- 25
+-- Inspect actual stored RDF terms, including their datatype annotations.
+SELECT graph, predicate, count(*) AS statements
+FROM rdf.main.rdf_quads()
+GROUP BY graph, predicate ORDER BY graph, predicate;
+
+-- Restrict inspection to catalog metadata.
+SELECT subject, predicate, object
+FROM rdf.main.rdf_quads(graph_iri := 'urn:vgi:rdf:catalog')
+ORDER BY subject, predicate, object;
 ```
 
-Never bake credentials into the image or the source. If a function can't run without
-real credentials, its examples can't execute in CI either. Set `execute: false` on the
-metadata check for that worker (see `.github/workflows/ci.yml`), and add
-`LINT_ARGS ?= --no-execute` to the Makefile so local runs match.
+The inspection function returns N-Triples term strings. Direct writes to the underlying Oxigraph directories are outside the SQL constraint/transaction contract. This is an application-specific RDF mapping, not the W3C Direct Mapping vocabulary or an automatic import of arbitrary RDF into SQL tables.
 
-## Testing
+## Graph features and examples
 
-```bash
-make test-unit                 # fast Python unit tests
-make test-sql                  # test/sql/*.test through DuckDB (stdio)
-make test-sql TRANSPORT=http   # …over HTTP (also: launch)
-make check                     # everything CI runs
+| Function | Result and use |
+|---|---|
+| `rdf_sparql(query, max_rows := 10000, timeout_ms := 30000, union_default := false)` | Local SPARQL SELECT, ASK, CONSTRUCT and DESCRIBE, including OPTIONAL, aggregates and property paths. SELECT variables are `STRUCT(kind, value, datatype, language)`; unbound terms are SQL NULL. ASK returns `answer BOOLEAN`; graph queries return subject/predicate/object term structs. |
+| `rdf_tables(schema_name := '')` | Discover table, column and foreign-key IRIs, graph IRIs and target table IRIs. Empty schema selection includes all schemas. |
+| `rdf_rows(schema_name, table_name)` | Ordinary typed SQL columns plus stable `__rdf_iri` for joining graph results to rows. Appends underscores if that name collides with a user column. |
+| `rdf_neighbors(node, graph_iri := 'urn:vgi:rdf:relationships', predicate_iri := '', direction := 'out', max_rows := 10000, timeout_ms := 30000)` | Resource-to-resource edges: source, predicate, target, graph and neighbor identifiers. Direction is out, in or both. |
+| `rdf_reachable(node, max_depth := 8, …)` | The same graph/direction/limit options as neighbors; returns distinct nodes and minimum depth, with cycle detection. Depth is bounded to 1–64; the start node is excluded. |
+| `rdf_quads(graph_iri := '')` | Inspect stored named-graph quads as subject, predicate, object and graph term strings. |
+
+SPARQL sees named graphs through `GRAPH`; use `union_default := true` to make their union the default graph. `SERVICE` is disabled and the query interface accepts no mutations. Term `kind` distinguishes `iri`, `blank`, `literal` and quoted `triple`; `value` is the lexical value, with datatype/language retained separately. Traversal accepts raw IRIs or `_:label` blank nodes and ignores literal-valued edges. Empty `graph_iri` searches all graphs; empty `predicate_iri` accepts all predicates.
+
+For a fresh attachment, this example joins SQL rows to foreign-key edges through SPARQL:
+
+```sql
+CREATE TABLE rdf.main.people(id INTEGER PRIMARY KEY, name VARCHAR);
+CREATE TABLE rdf.main.orders(id INTEGER, buyer INTEGER REFERENCES rdf.main.people(id));
+INSERT INTO rdf.main.people VALUES (1, 'Ada'), (2, 'Grace');
+INSERT INTO rdf.main.orders VALUES (10, 1), (11, 1), (12, 2);
+
+SELECT p.name, count(*) AS orders
+FROM rdf.main.rdf_sparql('
+    SELECT ?buyer WHERE {
+        GRAPH <urn:vgi:rdf:relationships> { ?order ?relationship ?buyer }
+    }') AS g
+JOIN rdf.main.rdf_rows('main', 'people') AS p ON g.buyer.value = p.__rdf_iri
+GROUP BY p.name ORDER BY p.name;
+-- Ada: 2, Grace: 1
+
+SELECT kind, name, iri, graph_iri
+FROM rdf.main.rdf_tables(schema_name := 'main') ORDER BY table_name, kind, name;
 ```
 
-`test/sql/*.test` files are [sqllogictest](https://duckdb.org/docs/stable/dev/sqllogictest/intro)
-scripts. `ci/run-integration.sh` runs them against your worker and fails on any
-unexpected skip, so a broken transport can't hide behind a green run.
-`fetch_items` is tested against `test/mock_api/server.py` so tests are fast and
-offline.
+Import external RDF using the admin tool, which publishes it atomically:
 
-**Testing against real data:** put live tests in their own `.test` file that starts with
-`require-env STARTER_LIVE`. They run only when that variable is set. Add the skip reason
-to `EXPECTED_SKIP_REASONS` in CI.
-
-## Metadata and the quality score
-
-DuckDB, agents and documentation tools discover your functions through their metadata:
-titles, descriptions, argument docs, examples and keywords.
-[vgi-lint](https://github.com/Query-farm/vgi-lint-check) checks it, and CI runs it on
-every push. Its settings live in `vgi-lint.toml`, which `make lint-explain`,
-`vgi-lint lint`, and CI all read. This template scores 100/100 with no findings.
-
-```bash
-make lint-explain                              # findings, each with its fix
-make lint-explain LINT_ARGS="--format agent"   # the same, grouped for coding agents
-make lint-ai                                   # optional: an agent must solve vgi-agent-tests.yaml
-```
-
-Each report also states an **assurance level**: how much was actually verified.
-
-| Level | Reached when | Here |
-|---|---|---|
-| L1 structural | the static metadata is clean | workers that need real credentials (`execute: false` in CI) |
-| L2 behavioural | the examples also run and return what they claim | **the CI gate** |
-| L3 semantic | an agent solves the worker's own test tasks, and the docs are reviewed | `make lint-ai`, before publishing |
-
-- **How strict.** Your copy fails on warnings (`fail_on = "warning"` in `vgi-lint.toml`).
-  Raise it to `"info"` before you publish the worker for others.
-- **The linter isn't pinned.** It tracks the current quality bar, so a new rule can flag
-  metadata that passed yesterday. Fix it, or waive the finding.
-- **Waivers.** If a finding is genuinely wrong for your worker, waive it in
-  `vgi-lint.toml` with a `kind` and a `reason`.
-- **Existing workers.** If you're adding this gate to a worker that already has
-  findings, record them with `vgi-lint lint --baseline vgi-lint-baseline --update-baseline`
-  and set `baseline` in `vgi-lint.toml`. After that, only new findings fail.
-
-Metadata lives in `src/starter_worker/meta.py` and each function's `class Meta`.
-
-## Logging and debugging
-
-stdout carries the Arrow protocol, so **never print to stdout**. Log to stderr instead.
-Use the standard `logging` module (the SDK routes it to stderr); `--debug` or `--log-level DEBUG` turns it up.
-
-- Under DuckDB (stdio/launch), worker stderr shows up in DuckDB's error messages and
-  terminal.
-- In Docker it goes to `docker logs`.
-- `make debug` runs one query against the worker with debug logging on.
-
-## Deploying
-
-The same binary serves stdio (DuckDB starts it locally) or HTTP (you host it):
-
-```bash
-docker build -t weather-worker .
-docker run -p 8000:8000 -e STARTER_API_TOKEN=... weather-worker   # health: GET /health
+```sh
+uv run vgi-rdf-admin ./data/example import examples/network.ttl \
+    --format turtle --graph https://example.org/network
 ```
 
 ```sql
-ATTACH 'starter' (TYPE vgi, LOCATION 'https://workers.example.com/starter');
+SELECT node, depth
+FROM rdf.main.rdf_reachable('https://example.org/alice',
+    graph_iri := 'https://example.org/network', max_depth := 3)
+ORDER BY depth, node;
+-- bob and dana at depth 1; carol at depth 2
+
+SELECT person.value AS person, name.value AS name, name.language AS language
+FROM rdf.main.rdf_sparql('
+    PREFIX ex: <https://example.org/>
+    SELECT ?person ?name WHERE {
+        GRAPH ex:network { ex:alice ex:knows+ ?person . ?person ex:name ?name }
+    }') ORDER BY person;
 ```
 
-Put hosted workers behind TLS and authentication. See
-[authentication](https://query.farm/vgi/authentication) for bearer tokens and JWTs, and
-[distributing a worker](https://query.farm/vgi/distributing-a-worker) for packaging.
-Pass secrets with `-e` or your platform's secret manager.
+Turtle/N-Triples imports require a destination graph. TriG/N-Quads can retain named graphs or use `--graph` to select one destination; otherwise default/blank graph names are rejected. `--replace` replaces the selected graph in the same transaction. Blank nodes are renamed per import. Imports cannot modify `urn:vgi:rdf:` system graphs, and RDF/XML, JSON-LD, remote fetching and arbitrary SPARQL UPDATE are not enabled. Remove external data with `vgi-rdf-admin DATABASE drop-graph GRAPH_IRI`.
 
-## Releasing
+Run `make test-examples` for the complete, asserted [graph demo](examples/graph_demo.py), including SQL joins, relationship traversal, imported Turtle, language tags, property paths and rollback. It uses a disposable database.
 
-Push a tag like `v0.1.0`. The release workflow builds the wheel and sdist, attaches them to the GitHub release, and (if you set the repository variable `PYPI_PUBLISH=true` and configure PyPI Trusted Publishing) publishes to PyPI, so users can run `uvx vgi-starter-worker`. Without PyPI, users install straight from the repo with `uvx --from git+https://github.com/Query-farm/vgi-starter-python@v0.1.0 vgi-starter-worker`. Every artifact is signed with cosign and
-carries SLSA build provenance. `ci/check-version.sh` makes sure the tag matches the
-version in `pyproject.toml`.
+## Deploy with authenticated HTTP
 
-## Using with coding agents
+The [Compose configuration](deploy/compose.yaml) runs as UID 10001 with a persistent volume, read-only container root, 2 GiB memory/2 CPU limits, bounded logs and a loopback-only published port. The SDK's internal coordination database is directed to `/data/.vgi-runtime.sqlite`; application rows, definitions and derived indexes remain RDF. It requires an authentication token and stable signing key. Generate a private environment file once:
 
-[AGENTS.md](AGENTS.md) is written for AI coding agents (Claude Code reads it via
-`CLAUDE.md`; Codex, Cursor and others read it directly). It covers the commands, the
-recipe for adding a function, the metadata checklist and the sharp edges. A good first
-prompt:
+```sh
+umask 077
+python3 - <<'PY'
+import secrets
+from pathlib import Path
+with Path('deploy/.env').open('x') as output:
+    output.write('VGI_BEARER_TOKENS=' + secrets.token_urlsafe(32) + '=operator\n')
+    output.write('VGI_SIGNING_KEY=' + secrets.token_hex(32) + '\n')
+PY
+docker compose --env-file deploy/.env -f deploy/compose.yaml up --build -d
+curl -fsS http://127.0.0.1:8000/health
+```
 
-> Read AGENTS.md. Replace `fetch_items` with `forecast(lat DOUBLE, lon DOUBLE)` that calls
-> the Open-Meteo API. Include full metadata, a mock-server test and a `STARTER_LIVE` test.
-> You're done when `make check` passes.
+After loading VGI in the SQL client, use the token portion before `=operator`:
 
-## Keeping up with the template
+```sql
+ATTACH 'rdf' (TYPE vgi, LOCATION 'http://127.0.0.1:8000',
+    bearer_token 'YOUR_RANDOM_TOKEN', database '/data/default');
+SELECT answer FROM rdf.main.rdf_sparql('ASK {}');
+```
 
-`make template-diff` shows what changed upstream (CI, docs, examples) since your copy was
-made. Your copy records its template version in `.vgi-starter.json`.
+Use a client secret facility or inject credentials at runtime; avoid storing real tokens in SQL history. Keep `deploy/.env` private and retain the signing key across restarts. For remote clients, put a TLS reverse proxy in front of the loopback endpoint with request/concurrency limits. The SDK also supports JWT issuer/audience authentication. Non-loopback worker listeners refuse to start without authentication and `VGI_RDF_ROOT`.
 
-## Learn more
+`VGI_RDF_ROOT` restricts database paths, including resolved symlinks. It is a filesystem boundary, not per-user authorization: authenticated principals share access to databases under that root. Deploy separate instances/roots for different trust domains. `VGI_RDF_READ_ONLY=true` rejects SQL mutations even if the client requests a writable attachment; administrative commands remain privileged local operations. A read-only SQL service still needs writable transaction/spool storage.
 
-- [What is VGI?](https://query.farm/vgi) · [Getting started](https://query.farm/vgi/getting-started) · [Building a worker](https://query.farm/vgi/building-a-worker)
-- [Python SDK docs](https://query.farm/vgi/docs/python/): [scalar tutorial](https://query.farm/vgi/docs/python/tutorial/scalar/), [table tutorial](https://query.farm/vgi/docs/python/tutorial/table/)
-- [Distributing a worker](https://query.farm/vgi/distributing-a-worker) · [Choosing a language](https://query.farm/vgi/languages) · [llms.txt](https://query.farm/vgi/llms.txt)
-- SDK source: [vgi-python](https://github.com/Query-farm/vgi-python) · RPC layer: [https://vgi-rpc-python.query.farm](https://vgi-rpc-python.query.farm)
+`/health` checks process health, not database integrity or disk capacity. Monitor container restarts, error logs, disk utilization, `vgi-rdf-admin DATABASE status`, conflict rates and query latency. Back up before upgrading; run `upgrade` and `check` using the new image before serving a migrated database. Writable attachments automatically upgrade pre-v2 derived mappings; read-only attachments require an explicit upgrade first. Keep an untouched backup when rolling back to an older release.
 
-## Support
+Verify a built deployment with `make test-container`. It creates a disposable Compose project, checks rejected/accepted authentication, SQL/graph results, integrity, backup/restore, restart persistence and forced read-only access, then removes its own volume. Normal `docker compose down` preserves production data; `down --volumes` deletes it.
 
-Open an issue on this repository. For VGI itself, see [query.farm](https://query.farm).
+## Resource limits
 
-## Authorship & license
+All values below are positive integer environment settings with the `VGI_RDF_` prefix. Exceeding a limit raises an error; results are never silently truncated. SQL scans are spooled once, so a host `LIMIT` or WHERE predicate does not avoid scanning the source. Query deadlines apply to child evaluation, including child startup; snapshot preparation and lock waits are separate.
 
-The starter template is written by [Query.Farm](https://query.farm) and released under
-the [BSD Zero Clause License](LICENSE) (0BSD). Use it for anything, with no attribution
-required. Replace this section with your own license once the code is yours.
+| Setting suffix | Default | Applies to |
+|---|---:|---|
+| `MAX_QUERY_ROWS` | 100000 | Ceiling for SPARQL/traversal `max_rows` (caller default 10000) |
+| `QUERY_TIMEOUT_MS` | 30000 | Ceiling for graph query `timeout_ms` |
+| `MAX_QUERY_BYTES` | 262144 | SPARQL query text |
+| `MAX_RESULT_BYTES` | 67108864 | Graph result Arrow file |
+| `MAX_TRAVERSAL_EDGES` | 1000000 | Examined traversal edges |
+| `MAX_SCAN_ROWS` | 10000000 | Relational/quad scan rows |
+| `MAX_SCAN_BYTES` | 1073741824 | Relational/quad scan Arrow file |
+| `SCAN_TIMEOUT_MS` | 120000 | Relational/quad evaluation deadline |
+| `MAX_WRITE_BATCH_BYTES` | 67108864 | Incoming SQL write batch |
+| `MAX_VALIDATION_ROWS` | 250000 | Rows materialized by full constraint validation |
+| `MAX_VALIDATION_BYTES` | 268435456 | Arrow bytes materialized by full constraint validation |
+| `MAX_IMPORT_BYTES` | 67108864 | External RDF input file |
+
+These are per-operation limits, not whole-service memory or storage quotas. Query planning, native indexes and Python values can use more memory than serialized Arrow results. Keep container/OS resource limits and provision disk for concurrent snapshots. Interrupted writes are fenced by a durable write-intent state; query children have independent deadlines if their parent dies.
+
+## Maintenance
+
+The separate admin executable writes ordinary output; it is not the Arrow worker.
+
+```sh
+# Consistent RDF export (refuses to overwrite an existing output file).
+uv run vgi-rdf-admin ./data/example export ./example.nq
+uv run vgi-rdf-admin ./data/example export ./example.trig --format trig
+
+# Standalone, consistent backup into a new directory.
+uv run vgi-rdf-admin ./data/example backup ./data/example-backup
+
+# Reclaim obsolete generation files, preserving live transaction snapshots.
+uv run vgi-rdf-admin ./data/example vacuum
+
+# JSON operational status and a read-only consistency audit.
+uv run vgi-rdf-admin ./data/example status
+uv run vgi-rdf-admin ./data/example check
+
+# Upgrade old derived relationship/key graphs atomically.
+uv run vgi-rdf-admin ./data/example upgrade
+
+# Inspect transactions left active after a client crash.
+uv run vgi-rdf-admin ./data/example transactions
+# Only after confirming that the selected client/transaction is abandoned:
+uv run vgi-rdf-admin ./data/example rollback TRANSACTION_ID
+
+# Optional policy: expire transactions idle for an hour, skipping locked operations.
+uv run vgi-rdf-admin ./data/example reap --idle-seconds 3600
+# Retain commit/rollback retry receipts for seven days while reclaiming old files.
+uv run vgi-rdf-admin ./data/example vacuum --receipts-older-than 604800
+```
+
+Statement snapshots are cleaned up on commit/rollback. Schedule `vacuum` to reclaim obsolete generations. By default terminal transaction receipts remain indefinitely; `--receipts-older-than` explicitly bounds the idempotent retry window, after which old tokens are unknown. Ancestry needed for active snapshots or ambiguous commits is preserved. `reap` is an operator-selected idle lease: even a healthy client loses its transaction if it stays idle beyond that lease. Choose a lease longer than legitimate pauses and schedule it only if that contract fits your clients. Nothing expires automatically.
+
+In Compose, prefix commands with `docker compose --env-file deploy/.env -f deploy/compose.yaml exec -T rdf` and use `/data/default`. Backups exclude uncommitted changes and can be attached using their directory as `database`. Copy backups to separate durable storage and periodically restore and run `check`; a backup on the same volume does not survive volume loss. Export is an interoperable RDF dataset, while `backup` produces a directly attachable database directory. `check` validates SQL constraints, row representation and rebuilt derived indexes without changing data, subject to the validation limits above.
+
+## Supported scope and engine limits
+
+- All six requested SQL operations are tested through real VGI engines. Primary/unique checks use RDF hash indexes and exact SQL comparisons. Foreign-key validation and parent updates/deletes can still materialize referenced/dependent tables. DDL constraint validation and integrity checks also need full bounded table reads.
+- SQL predicates run in the host. The installed SDK's optional filter evaluator imports Haybarn, which conflicts with the stock DuckDB native library used for constraints; the worker deliberately does not load both. Point lookups still scan projected columns. High write concurrency, low-latency point serving and larger datasets need workload-specific capacity tests.
+- Stock DuckDB 2.0.0 lacks `GetDeleteReturningVirtualColumns`, so `DELETE … RETURNING` is rejected by its binder. Plain DELETE works. The Haybarn 2.0.0rc11 SQL suite tests DELETE RETURNING successfully.
+- Both tested engines reject native canonical `CHECK` definitions before calling the worker. CHECK enforcement and canonical constraint mutations are tested through the backend/catalog API, not claimed as passing native SQL CHECK support.
+- The current VGI Arrow bridge exposes `HUGEINT` as `DECIMAL(38,0)`; values beyond 38 decimal digits cannot be transported by that mapping. The type tests exercise the supported range, not the entire 128-bit integer domain.
+- Self-referencing foreign keys, cascading referential actions, deferred constraints, nested-field constraints, generated columns, SQL time travel, arbitrary ALTER COLUMN operations, views, user indexes, custom table layouts and arbitrary SPARQL mutations are not implemented. Unsupported operations fail explicitly.
+
+## Measured workload
+
+The [recorded benchmark](benchmark-results.json) uses stock DuckDB 2.0.0 and Python 3.14.4 on macOS ARM64, one client, 100,000 rows and a three-column table with a primary key. Timings include VGI transport and storage work: insert **17.51 s**, aggregate scan **1.34 s**, point lookup **2.03 s**, point update **2.74 s**, delete within a rolled-back transaction **2.02 s**, restored aggregate scan **1.35 s**. The backup was a local Oxigraph hard-link snapshot, not a remote copy. Reported logical storage bytes count hard-linked files more than once.
+
+One-pass scan materialization reduced this workload's aggregate scan from 12.63 s to 1.34 s and point update from 27.98 s to 2.74 s; [earlier measurements](benchmarks/before-scan-optimization.json) are retained. These observations are not an SLA or a general throughput claim. Reproduce with `uv run python examples/benchmark.py --rows 100000 --output benchmark-results.json`. Concurrent correctness is separately tested with four writer processes and transaction retries.
+
+## Tests and provenance
+
+```sh
+make check                 # formatting, static typing, docstrings, pytest, all SQL transports, metadata
+make test-unit             # codec/storage/catalog tests and stock-DuckDB integration tests
+make test-sql               # Haybarn 2.0.0rc11 SQLLogicTest suite over stdio
+make test-sql TRANSPORT=launch
+make test-sql TRANSPORT=http
+make test-examples          # asserted SQL/graph demonstration
+make test-container         # authenticated production-image lifecycle test
+make lint-explain
+```
+
+Pytest includes real stock **DuckDB 2.0.0**, loading the signed VGI extension from `query_farm`. SQLLogicTest uses **Haybarn 2.0.0rc11**, loading VGI from `community`, over stdio, launch and HTTP. These are reported separately. Tests use disposable data, not the example directory. Engine/extension installation requires network access; data fixtures themselves are local.
+
+Tests cover CRUD, CTAS, defaults, empty results, NULLs, duplicate rows, multiple batches, returned rows, joins, windows, type round trips, constraints, rollback, concurrent clients, worker/process restart, authenticated/read-only HTTP, path confinement, RDF export, scan stability, backup, vacuum and interrupted commit recovery. Graph tests cover SPARQL result forms/terms, property paths, identity joins, foreign-key edge maintenance, traversal cycles/limits, import rollback and protected graphs. Fault tests cover process death, disk-full receipt failure, hash collisions, stale leases, scan limits and integrity corruption. The original starter tests remain under a separate example worker; the product catalog does not expose the greeting/REST demonstrations.
+
+`vgi-worker.json` is a portable stock-DuckDB verification contract. The additional verifier was run with:
+
+```sh
+uv run --with duckdb==2.0.0 python \
+  /Users/rusty/.agents/skills/vgi-worker/scripts/verify_worker.py \
+  --project . --output verification.json
+```
+
+Starter: [Query-farm/vgi-starter-python](https://github.com/Query-farm/vgi-starter-python), version 1.3.0, revision `9cca9105474d6e0052b8e343c8ea21f3d1a7503c`. Its baseline `make check` passed before adaptation. Resolved worker SDK: `vgi-python 0.51.1`; RDF engine: `pyoxigraph 0.5.13`. The starter SDK constraints and recipes are preserved. The metadata gate has a scoped exemption for the `rdf_rows` example's pre-existing table requirement; that function is exercised by real SQL tests and the runnable demo. No public support/SLA policy is invented.
+
+Implementation: [storage.py](src/rdf_worker/storage.py), [model.py](src/rdf_worker/model.py), [codec.py](src/rdf_worker/codec.py), [catalog.py](src/rdf_worker/catalog.py), [functions.py](src/rdf_worker/functions.py). `make template-diff` can inspect upstream starter changes before an SDK upgrade.

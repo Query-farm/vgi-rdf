@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "catalog": "rdf",
+  "worker": [
+    ".venv/bin/vgi-rdf-worker"
+  ],
+  "checks": [
+    {
+      "name": "create table",
+      "sql": "CREATE TABLE rdf.main.verify_people(id INTEGER PRIMARY KEY, name VARCHAR, qty INTEGER DEFAULT 2)",
+      "rows": []
+    },
+    {
+      "name": "insert rows with defaults",
+      "sql": "INSERT INTO rdf.main.verify_people(id,name) VALUES(1,'Ada'),(2,'Grace')",
+      "rows": [
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "name": "select values",
+      "sql": "SELECT * FROM rdf.main.verify_people ORDER BY id",
+      "rows": [
+        [
+          1,
+          "Ada",
+          2
+        ],
+        [
+          2,
+          "Grace",
+          2
+        ]
+      ]
+    },
+    {
+      "name": "update returning",
+      "sql": "UPDATE rdf.main.verify_people SET qty=qty+1 WHERE id=1 RETURNING id,qty",
+      "rows": [
+        [
+          1,
+          3
+        ]
+      ]
+    },
+    {
+      "name": "begin rollback test",
+      "sql": "BEGIN",
+      "rows": []
+    },
+    {
+      "name": "transaction write",
+      "sql": "INSERT INTO rdf.main.verify_people VALUES(3,'Lin',9)",
+      "rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "name": "rollback transaction",
+      "sql": "ROLLBACK",
+      "rows": []
+    },
+    {
+      "name": "no leaked row",
+      "sql": "SELECT count(*) FROM rdf.main.verify_people",
+      "rows": [
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "name": "delete rows",
+      "sql": "DELETE FROM rdf.main.verify_people WHERE id=2",
+      "rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "name": "RDF row identities",
+      "sql": "SELECT count(*) FROM rdf.main.rdf_quads() WHERE predicate='<urn:vgi:rdf:rowId>'",
+      "rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "name": "SPARQL typed term",
+      "sql": "SELECT x.kind,x.value,x.datatype FROM rdf.main.rdf_sparql('SELECT ?x WHERE { VALUES ?x { 7 } }')",
+      "rows": [
+        [
+          "literal",
+          "7",
+          "http://www.w3.org/2001/XMLSchema#integer"
+        ]
+      ]
+    },
+    {
+      "name": "SPARQL ASK",
+      "sql": "SELECT answer FROM rdf.main.rdf_sparql('ASK { GRAPH <urn:vgi:rdf:catalog> { ?s ?p ?o } }')",
+      "rows": [
+        [
+          true
+        ]
+      ]
+    },
+    {
+      "name": "SPARQL graph result",
+      "sql": "SELECT subject.value,predicate.value,object.value FROM rdf.main.rdf_sparql('CONSTRUCT { <urn:s> <urn:p> 7 } WHERE {}')",
+      "rows": [
+        [
+          "urn:s",
+          "urn:p",
+          "7"
+        ]
+      ]
+    },
+    {
+      "name": "mapped table columns",
+      "sql": "SELECT name FROM rdf.main.rdf_tables(schema_name := 'main') WHERE table_name='verify_people' AND kind='column' ORDER BY name",
+      "rows": [
+        [
+          "id"
+        ],
+        [
+          "name"
+        ],
+        [
+          "qty"
+        ]
+      ]
+    },
+    {
+      "name": "SQL row identity join",
+      "sql": "SELECT name,starts_with(__rdf_iri,'urn:vgi:rdf:table:') FROM rdf.main.rdf_rows('main','verify_people')",
+      "rows": [
+        [
+          "Ada",
+          true
+        ]
+      ]
+    },
+    {
+      "name": "create related table",
+      "sql": "CREATE TABLE rdf.main.verify_orders(buyer INT REFERENCES rdf.main.verify_people(id))",
+      "rows": []
+    },
+    {
+      "name": "insert related row",
+      "sql": "INSERT INTO rdf.main.verify_orders VALUES(1)",
+      "rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "name": "foreign key RDF edge",
+      "sql": "SELECT p.name FROM rdf.main.rdf_sparql('SELECT ?buyer WHERE { GRAPH <urn:vgi:rdf:relationships> { ?s ?p ?buyer } }') g JOIN rdf.main.rdf_rows('main','verify_people') p ON g.buyer.value=p.__rdf_iri",
+      "rows": [
+        [
+          "Ada"
+        ]
+      ]
+    },
+    {
+      "name": "absent node neighborhood",
+      "sql": "SELECT count(*) FROM rdf.main.rdf_neighbors('urn:absent')",
+      "rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "name": "absent node traversal",
+      "sql": "SELECT count(*) FROM rdf.main.rdf_reachable('urn:absent', max_depth := 3)",
+      "rows": [
+        [
+          0
+        ]
+      ]
+    },
+    {
+      "name": "drop related table",
+      "sql": "DROP TABLE rdf.main.verify_orders",
+      "rows": []
+    },
+    {
+      "name": "relationship cleanup",
+      "sql": "SELECT answer FROM rdf.main.rdf_sparql('ASK { GRAPH <urn:vgi:rdf:relationships> { ?s ?p ?o } }')",
+      "rows": [
+        [
+          false
+        ]
+      ]
+    },
+    {
+      "name": "create bulk table",
+      "sql": "CREATE TABLE rdf.main.verify_bulk AS SELECT i AS n FROM range(5000) t(i)",
+      "rows": [
+        [
+          5000
+        ]
+      ]
+    },
+    {
+      "name": "multiple batches",
+      "sql": "SELECT count(*),sum(n) FROM rdf.main.verify_bulk",
+      "rows": [
+        [
+          5000,
+          12497500
+        ]
+      ]
+    },
+    {
+      "name": "drop bulk table",
+      "sql": "DROP TABLE rdf.main.verify_bulk",
+      "rows": []
+    },
+    {
+      "name": "drop constrained table",
+      "sql": "DROP TABLE rdf.main.verify_people",
+      "rows": []
+    },
+    {
+      "name": "no remaining rows",
+      "sql": "SELECT count(*) FROM rdf.main.rdf_quads() WHERE predicate='<urn:vgi:rdf:rowId>'",
+      "rows": [
+        [
+          0
+        ]
+      ]
+    }
+  ]
+}

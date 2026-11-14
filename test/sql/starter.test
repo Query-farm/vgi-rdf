@@ -1,40 +1,40 @@
-# name: test/sql/starter.test
-# description: SQL-level tests for the starter worker, run through DuckDB by ci/run-integration.sh
-# group: [starter]
+# name: test/sql/rdf.test
+# description: SQL-level tests for the rdf worker, run through DuckDB by ci/run-integration.sh
+# group: [rdf]
 # managed-by: vgi-starters (edit upstream in shared/, then run tools/render.py)
 
 require vgi
 
-require-env STARTER_WORKER
+require-env RDF_STARTER_WORKER
 
-require-env STARTER_MOCK_API
+require-env RDF_MOCK_API
 
-require-env STARTER_MOCK_API_AUTH
+require-env RDF_MOCK_API_AUTH
 
 statement ok
-ATTACH 'starter' (TYPE vgi, LOCATION '{STARTER_WORKER}');
+ATTACH 'rdf' (TYPE vgi, LOCATION '{RDF_STARTER_WORKER}');
 
 # ---------------------------------------------------------------- greet (scalar)
 
 query T
-SELECT starter.main.greet('Ada');
+SELECT rdf.main.greet('Ada');
 ----
 Hi, Ada!
 
 query T
-SELECT starter.main.greet('Ada', 'formal');
+SELECT rdf.main.greet('Ada', 'formal');
 ----
 Good day, Ada.
 
 # NULL in, NULL out.
 query T
-SELECT starter.main.greet(NULL);
+SELECT rdf.main.greet(NULL);
 ----
 NULL
 
 # Works over a whole column, one result per row.
 query T
-SELECT starter.main.greet(name) FROM (VALUES ('Ada'), ('Grace'), (NULL)) AS t(name) ORDER BY ALL NULLS LAST;
+SELECT rdf.main.greet(name) FROM (VALUES ('Ada'), ('Grace'), (NULL)) AS t(name) ORDER BY ALL NULLS LAST;
 ----
 Hi, Ada!
 Hi, Grace!
@@ -43,14 +43,14 @@ NULL
 # `style` is constrained to 'casual' | 'formal' and checked when the query is bound.
 # (No expected message: each SDK words constraint errors its own way.)
 statement error
-SELECT starter.main.greet('Ada', 'loud');
+SELECT rdf.main.greet('Ada', 'loud');
 ----
 <REGEX>:.*
 
 # ------------------------------------------------------ sequence_table (table fn)
 
 query II
-SELECT n, squared FROM starter.main.sequence_table(4) ORDER BY n;
+SELECT n, squared FROM rdf.main.sequence_table(4) ORDER BY n;
 ----
 0	0
 1	1
@@ -59,7 +59,7 @@ SELECT n, squared FROM starter.main.sequence_table(4) ORDER BY n;
 
 # Named argument with a default.
 query I
-SELECT n FROM starter.main.sequence_table(3, step := 5) ORDER BY n;
+SELECT n FROM rdf.main.sequence_table(3, step := 5) ORDER BY n;
 ----
 0
 5
@@ -67,82 +67,82 @@ SELECT n FROM starter.main.sequence_table(3, step := 5) ORDER BY n;
 
 # Larger than one batch: the cursor must carry across process calls.
 query II
-SELECT count(*), max(n) FROM starter.main.sequence_table(25000);
+SELECT count(*), max(n) FROM rdf.main.sequence_table(25000);
 ----
 25000	24999
 
 query I
-SELECT count(*) FROM starter.main.sequence_table(0);
+SELECT count(*) FROM rdf.main.sequence_table(0);
 ----
 0
 
 # count is constrained to [0, 1000000].
 statement error
-SELECT * FROM starter.main.sequence_table(-1);
+SELECT * FROM rdf.main.sequence_table(-1);
 ----
 <REGEX>:.*
 
 # Named arguments are constrained too: step >= 1.
 statement error
-SELECT * FROM starter.main.sequence_table(3, step := 0);
+SELECT * FROM rdf.main.sequence_table(3, step := 0);
 ----
 <REGEX>:.*
 
 # ------------------------------------------------- fetch_items (REST table fn)
 
 query IIT
-SELECT count(*), sum(id), min(name) FROM starter.main.fetch_items('{STARTER_MOCK_API}', page_size := 4);
+SELECT count(*), sum(id), min(name) FROM rdf.main.fetch_items('{RDF_MOCK_API}', page_size := 4);
 ----
 25	325	item-01
 
 query TI
-SELECT category, count(*) FROM starter.main.fetch_items('{STARTER_MOCK_API}') GROUP BY category ORDER BY category;
+SELECT category, count(*) FROM rdf.main.fetch_items('{RDF_MOCK_API}') GROUP BY category ORDER BY category;
 ----
 hardware	8
 service	8
 software	9
 
-# The harness runs STARTER_MOCK_API with MOCK_API_FLAKY=1: every page answers
+# The harness runs RDF_MOCK_API with MOCK_API_FLAKY=1: every page answers
 # 429 + Retry-After once, so every query above also exercised the retry path.
 
-# STARTER_MOCK_API_AUTH requires a bearer token ('test-token'). Every language's
+# RDF_MOCK_API_AUTH requires a bearer token ('test-token'). Every language's
 # fetch_items must put the HTTP status code in its error message.
 statement error
-SELECT count(*) FROM starter.main.fetch_items('{STARTER_MOCK_API_AUTH}');
+SELECT count(*) FROM rdf.main.fetch_items('{RDF_MOCK_API_AUTH}');
 ----
 401
 
 statement ok
-CREATE SECRET starter_api_test (TYPE starter_api, TOKEN 'test-token');
+CREATE SECRET rdf_api_test (TYPE rdf_api, TOKEN 'test-token');
 
 query I
-SELECT count(*) FROM starter.main.fetch_items('{STARTER_MOCK_API_AUTH}', page_size := 25);
+SELECT count(*) FROM rdf.main.fetch_items('{RDF_MOCK_API_AUTH}', page_size := 25);
 ----
 25
 
 # Several pages: the token must survive between batches (over HTTP each batch is a
 # separate request, so a token kept only in memory is lost after page 1).
 query I
-SELECT count(*) FROM starter.main.fetch_items('{STARTER_MOCK_API_AUTH}', page_size := 7);
+SELECT count(*) FROM rdf.main.fetch_items('{RDF_MOCK_API_AUTH}', page_size := 7);
 ----
 25
 
 statement ok
-DROP SECRET starter_api_test;
+DROP SECRET rdf_api_test;
 
 # base_url must be http(s).
 statement error
-SELECT * FROM starter.main.fetch_items('ftp://example.com');
+SELECT * FROM rdf.main.fetch_items('ftp://example.com');
 ----
 <REGEX>:.*
 
 # page_size is a named argument constrained to [1, 1000].
 statement error
-SELECT * FROM starter.main.fetch_items('{STARTER_MOCK_API}', page_size := 0);
+SELECT * FROM rdf.main.fetch_items('{RDF_MOCK_API}', page_size := 0);
 ----
 <REGEX>:.*
 
 statement error
-SELECT * FROM starter.main.fetch_items('{STARTER_MOCK_API}', page_size := 5000);
+SELECT * FROM rdf.main.fetch_items('{RDF_MOCK_API}', page_size := 5000);
 ----
 <REGEX>:.*

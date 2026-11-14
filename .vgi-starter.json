@@ -12,5 +12,10 @@
   "optional_files": [
     ".github/workflows/nightly.yml",
     ".github/dependabot.yml"
-  ]
+  ],
+  "name": "rdf",
+  "repo": "your-org/vgi-rdf",
+  "initialized": "2026-11-12",
+  "source_url": "https://github.com/Query-farm/vgi-starter-python",
+  "source_revision": "9cca9105474d6e0052b8e343c8ea21f3d1a7503c"
 }

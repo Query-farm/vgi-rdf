@@ -1,6 +1,23 @@
 <!-- managed-by: vgi-starters (edit upstream in shared/examples/README.md.tmpl) -->
 # Recipes
 
+The RDF worker has three runnable examples from the project root:
+
+```sh
+uv run python examples/graph_demo.py
+uv run python examples/benchmark.py --rows 100000 --output benchmark-results.json
+make test-container
+```
+
+`graph_demo.py` asserts SQL-to-RDF joins, foreign-key edges, imported Turtle,
+cycle-safe traversal, SPARQL property paths, language tags and rollback.
+`benchmark.py` measures a disposable SQL workload and backup/reopen.
+`container_check.py` tests the built Compose image with authentication, SQL,
+graphs, integrity, backup, restart and enforced read-only mode, then removes its
+own disposable volume. Deployment and operational limits are in the main README.
+
+## Preserved starter recipes
+
 Small, complete workers, one per pattern. Each runs on its own and is tested by
 `examples/test/recipes.test` (`make test-sql`). Copy the pattern you need into the
 main worker.
@@ -14,7 +31,7 @@ main worker.
 | `catalog_tables` | a dataset queried by name, with a primary key | `SELECT * FROM catalog_tables.main.countries` |
 | `copy_to_sink` | `COPY … TO` with a custom output format | `COPY t TO 'out.jsonl' (FORMAT 'copy_to_sink.jsonl_out')` |
 
-Streaming large results and calling REST APIs are covered by the main worker's
+Streaming large results and calling REST APIs are covered by the starter example worker's
 `sequence_table` and `fetch_items`.
 
 ## Running a recipe

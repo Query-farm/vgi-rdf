@@ -1,0 +1,38 @@
+services:
+  rdf:
+    image: ${VGI_RDF_IMAGE:-vgi-rdf:local}
+    build:
+      context: ..
+      args:
+        VERSION: "0.2.0"
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    ports:
+      - "127.0.0.1:${VGI_RDF_PORT:-8000}:8000"
+    environment:
+      VGI_BEARER_TOKENS: ${VGI_BEARER_TOKENS:?Set random token=principal pairs}
+      VGI_SIGNING_KEY: ${VGI_SIGNING_KEY:?Set a persistent random signing key}
+      VGI_RDF_ROOT: /data
+      VGI_RDF_DATABASE: /data/default
+      VGI_RDF_READ_ONLY: ${VGI_RDF_READ_ONLY:-false}
+      VGI_WORKER_SQLITE_PATH: /data/.vgi-runtime.sqlite
+    volumes:
+      - rdf-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=268435456,mode=1777
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  rdf-data:

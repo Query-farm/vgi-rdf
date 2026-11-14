@@ -1,0 +1,140 @@
+require vgi
+require-env RDF_WORKER
+
+statement ok
+ATTACH 'rdf' AS rdf (TYPE vgi, LOCATION '{RDF_WORKER}');
+
+statement ok
+CREATE TABLE rdf.main.people (id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, qty INTEGER DEFAULT 7);
+
+query ITI
+INSERT INTO rdf.main.people(id,name) VALUES (1,'Ada'),(2,'Grace') RETURNING *;
+----
+1	Ada	7
+2	Grace	7
+
+query II
+UPDATE rdf.main.people SET qty=qty+1 WHERE id=1 RETURNING id,qty;
+----
+1	8
+
+query ITI
+DELETE FROM rdf.main.people WHERE id=2 RETURNING *;
+----
+2	Grace	7
+
+# Both tested engines reject native CHECK definitions before sending them to VGI.
+# Backend CHECK enforcement is exercised by test_constraints.py through the catalog.
+statement error
+CREATE TABLE rdf.main.unsupported_check(n INT CHECK(n>0));
+----
+<REGEX>:.*canonical CHECK.*
+
+query ITI
+SELECT * FROM rdf.main.people;
+----
+1	Ada	8
+
+statement ok
+BEGIN;
+
+statement ok
+UPDATE rdf.main.people SET qty=10;
+
+statement ok
+CREATE TABLE rdf.main.rolled_back(n INT);
+
+statement ok
+ROLLBACK;
+
+query I
+SELECT qty FROM rdf.main.people;
+----
+8
+
+statement error
+SELECT * FROM rdf.main.rolled_back;
+----
+<REGEX>:.*does not exist.*
+
+statement ok
+CREATE TABLE rdf.main.child (pid INT REFERENCES rdf.main.people(id));
+
+statement ok
+INSERT INTO rdf.main.child VALUES(1),(NULL);
+
+statement error
+DELETE FROM rdf.main.people WHERE id=1;
+----
+<REGEX>:.*FOREIGN_KEY.*
+
+statement error
+INSERT INTO rdf.main.child VALUES(9);
+----
+<REGEX>:.*FOREIGN_KEY.*
+
+statement ok
+DROP TABLE rdf.main.child;
+
+statement ok
+DROP TABLE rdf.main.people;
+
+statement ok
+CREATE TABLE rdf.main.many AS SELECT i::BIGINT AS id, i::BIGINT*2 AS n FROM range(5000) t(i);
+
+query II
+SELECT count(*),sum(n) FROM rdf.main.many;
+----
+5000	24995000
+
+statement ok
+INSERT INTO rdf.main.many SELECT id+5000,n FROM rdf.main.many;
+
+query II
+SELECT count(*),max(id) FROM rdf.main.many;
+----
+10000	9999
+
+statement ok
+CREATE TABLE IF NOT EXISTS rdf.main.many AS SELECT 99999 AS id, 0 AS n;
+
+query I
+SELECT count(*) FROM rdf.main.many;
+----
+10000
+
+statement ok
+CREATE OR REPLACE TABLE rdf.main.many AS SELECT 1 AS n;
+
+query I
+SELECT n FROM rdf.main.many;
+----
+1
+
+statement ok
+CREATE SCHEMA rdf."odd.schema";
+
+statement ok
+CREATE TABLE rdf."odd.schema"."a.b" ("a.b" VARCHAR, v INTEGER[]);
+
+statement ok
+INSERT INTO rdf."odd.schema"."a.b" VALUES ('☃', [1,NULL,3]),(NULL,NULL),(NULL,NULL);
+
+query III
+SELECT count(*),count("a.b"),count(v) FROM rdf."odd.schema"."a.b";
+----
+3	1	1
+
+query I
+SELECT count(*) FROM rdf.main.rdf_quads() WHERE predicate='<urn:vgi:rdf:rowId>';
+----
+4
+
+statement ok
+DROP SCHEMA rdf."odd.schema" CASCADE;
+
+statement ok
+DROP TABLE rdf.main.many;
+
+statement ok
+DETACH rdf;

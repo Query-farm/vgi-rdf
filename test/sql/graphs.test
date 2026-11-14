@@ -1,0 +1,103 @@
+require vgi
+require-env RDF_WORKER
+
+statement ok
+ATTACH 'rdf' AS rdf (TYPE vgi, LOCATION '{RDF_WORKER}');
+
+statement ok
+CREATE TABLE rdf.main.people(id INTEGER PRIMARY KEY, name VARCHAR);
+
+statement ok
+CREATE TABLE rdf.main.orders(id INTEGER, buyer INTEGER REFERENCES rdf.main.people(id));
+
+statement ok
+INSERT INTO rdf.main.people VALUES (1,'Ada'),(2,'Grace');
+
+statement ok
+INSERT INTO rdf.main.orders VALUES (10,1),(11,2),(12,NULL);
+
+query I
+SELECT count(*) FROM rdf.main.rdf_tables() WHERE kind='foreign_key';
+----
+1
+
+query I
+SELECT count(*) FROM rdf.main.rdf_rows('main','people') WHERE starts_with(__rdf_iri, 'urn:vgi:rdf:table:');
+----
+2
+
+query T
+SELECT p.name FROM rdf.main.rdf_sparql('SELECT ?s ?o WHERE { GRAPH <urn:vgi:rdf:relationships> { ?s ?p ?o } }') g JOIN rdf.main.rdf_rows('main','people') p ON g.o.value=p.__rdf_iri ORDER BY p.name;
+----
+Ada
+Grace
+
+query I
+SELECT answer::INTEGER FROM rdf.main.rdf_sparql('ASK { GRAPH <urn:vgi:rdf:relationships> { ?s ?p ?o } }');
+----
+1
+
+query T
+SELECT term.value FROM rdf.main.rdf_sparql('SELECT ("bonjour"@fr AS ?term) WHERE {}');
+----
+bonjour
+
+query TT
+SELECT subject.value, object.value FROM rdf.main.rdf_sparql('CONSTRUCT { <urn:example:a> <urn:example:p> <urn:example:b> } WHERE {}');
+----
+urn:example:a	urn:example:b
+
+query I
+SELECT count(*) FROM rdf.main.rdf_neighbors('urn:example:absent');
+----
+0
+
+query I
+SELECT count(*) FROM rdf.main.rdf_reachable('urn:example:absent', max_depth := 3);
+----
+0
+
+statement error
+SELECT * FROM rdf.main.rdf_sparql('SELECT * WHERE { SERVICE <https://example.invalid/> { ?s ?p ?o } }');
+----
+<REGEX>:.*SERVICE.*
+
+statement error
+SELECT * FROM rdf.main.rdf_sparql('SELECT ?s WHERE { GRAPH ?g { ?s <urn:vgi:rdf:rowId> ?id } }', max_rows := 1);
+----
+<REGEX>:.*max_rows.*
+
+statement ok
+BEGIN;
+
+statement ok
+DELETE FROM rdf.main.orders WHERE buyer IS NOT NULL;
+
+query I
+SELECT count(*) FROM rdf.main.rdf_sparql('SELECT ?s WHERE { GRAPH <urn:vgi:rdf:relationships> { ?s ?p ?o } }');
+----
+0
+
+statement ok
+ROLLBACK;
+
+query I
+SELECT count(*) FROM rdf.main.rdf_sparql('SELECT ?s WHERE { GRAPH <urn:vgi:rdf:relationships> { ?s ?p ?o } }');
+----
+2
+
+statement ok
+DROP TABLE rdf.main.people CASCADE;
+
+query I
+SELECT count(*) FROM rdf.main.orders;
+----
+3
+
+query I
+SELECT count(*) FROM rdf.main.rdf_sparql('SELECT ?s WHERE { GRAPH <urn:vgi:rdf:relationships> { ?s ?p ?o } }');
+----
+0
+
+statement ok
+DETACH rdf;

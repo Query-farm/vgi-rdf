@@ -9,7 +9,7 @@ import pytest
 from vgi.arguments import Arguments
 from vgi.client import Client
 
-from starter_worker.greet import _greet
+from rdf_worker.greet import _greet
 
 SCHEMA = ["main"]
 

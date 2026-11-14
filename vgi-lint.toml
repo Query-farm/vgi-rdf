@@ -4,13 +4,10 @@
 # contract with `vgi-lint spec`.
 
 # The worker to attach, relative to this directory. Build it first with `make build`.
-location = ".venv/bin/vgi-starter-worker"
+location = ".venv/bin/vgi-rdf-worker"
 
-# template-only:start
-fail_on = "info"
-# template-only:end
 # Fail on warnings while you build. Raise this to "info" before you publish the worker.
-# fork-only: fail_on = "warning"
+fail_on = "warning"
 
 # Waive a finding only with a kind and a reason, so the waiver can be audited:
 #   domain-exemption  permanent and legitimate for this worker
@@ -25,3 +22,8 @@ ignore = [
 #   vgi-lint lint --baseline vgi-lint-baseline --update-baseline
 # and uncomment the next line. Only new findings fail after that.
 # baseline = "vgi-lint-baseline"
+
+[per_object."rdf.main.rdf_rows"]
+ignore = [
+  { code = "VGI901", kind = "domain-exemption", reason = "rdf_rows binds the schema of a user-created table. Its documented people example requires that table; the linter attaches an empty database without post-attach fixture setup. The same function is exercised through real SQL in tests/test_graph.py, test/sql/graphs.test on all transports, and examples/graph_demo.py." },
+]

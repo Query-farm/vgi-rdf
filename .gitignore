@@ -9,3 +9,14 @@ dist/
 build/
 *.egg-info/
 .DS_Store
+data/
+*.nq
+*.trig
+.env
+deploy/.env
+
+# Local verification outputs, never part of the published implementation.
+/benchmark-results.json
+/benchmarks/*.json
+/verification.json
+/wheel-verification.json
