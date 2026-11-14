@@ -112,10 +112,10 @@ def plot_ownership(before, after, target):
         ordered = frame.set_index("owner").loc[labels]
         colors = ["#2F8194" if n != "Unassigned" else "#AAB9B0" for n in labels]
         bars = ax.barh(labels, ordered.task_count.astype(int), color=colors, height=0.58)
-        ax.bar_label(bars, padding=7, fmt="%d tasks", fontsize=10)
+        ax.bar_label(bars, padding=7, fmt="%d", fontsize=10)
         ax.set_xlim(0, 3)
         ax.set_xticks([0, 1, 2, 3])
-        ax.set_xlabel("Assigned tasks · count")
+        ax.set_xlabel("Tasks · count")
         ax.set_title(label, loc="left", fontsize=12, weight="bold", pad=15)
         ax.grid(axis="x")
         ax.set_axisbelow(True)
