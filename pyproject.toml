@@ -8,7 +8,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
     "duckdb==2.0.0",
-    "filelock>=3.20,<4",
+    "filelock>=3.20,<5",
     "pyoxigraph>=0.5.12,<0.6",
     # [http] adds the HTTP transport (`--http`) used by Docker deploys.
     # SDK bumps go through the template (minor bumps can raise the protocol).
