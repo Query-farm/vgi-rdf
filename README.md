@@ -309,3 +309,7 @@ uv run --with duckdb==2.0.0 python \
 Starter: [Query-farm/vgi-starter-python](https://github.com/Query-farm/vgi-starter-python), version 1.3.0, revision `9cca9105474d6e0052b8e343c8ea21f3d1a7503c`. Its baseline `make check` passed before adaptation. Resolved worker SDK: `vgi-python 0.51.1`; RDF engine: `pyoxigraph 0.5.13`. The starter SDK constraints and recipes are preserved. The metadata gate has a scoped exemption for the `rdf_rows` example's pre-existing table requirement; that function is exercised by real SQL tests and the runnable demo. No public support/SLA policy is invented.
 
 Implementation: [storage.py](src/rdf_worker/storage.py), [model.py](src/rdf_worker/model.py), [codec.py](src/rdf_worker/codec.py), [catalog.py](src/rdf_worker/catalog.py), [functions.py](src/rdf_worker/functions.py). `make template-diff` can inspect upstream starter changes before an SDK upgrade.
+
+## Executed SQL notebook
+
+See [notebooks](notebooks/README.md) for a portable, executed Haybarn walkthrough with charts and a separate parameter experiment.
