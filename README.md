@@ -147,6 +147,15 @@ GROUP BY p.name ORDER BY p.name;
 
 SELECT kind, name, iri, graph_iri
 FROM rdf.main.rdf_tables(schema_name := 'main') ORDER BY table_name, kind, name;
+
+-- Edges materialized by each foreign key, with the tables it connects
+SELECT fk.table_name AS referencing_table, target.table_name AS referenced_table, count(q.subject) AS edges
+FROM rdf.main.rdf_tables() AS fk
+JOIN rdf.main.rdf_tables() AS target ON target.kind = 'table' AND target.iri = fk.target_iri
+LEFT JOIN rdf.main.rdf_quads(graph_iri := 'urn:vgi:rdf:relationships') AS q ON q.predicate = '<' || fk.iri || '>'
+WHERE fk.kind = 'foreign_key'
+GROUP BY fk.table_name, target.table_name ORDER BY referencing_table;
+-- orders -> people: 3
 ```
 
 Import external RDF using the admin tool, which publishes it atomically:
@@ -306,7 +315,7 @@ uv run --with duckdb==2.0.0 python \
   --project . --output verification.json
 ```
 
-Starter: [Query-farm/vgi-starter-python](https://github.com/Query-farm/vgi-starter-python), version 1.3.0, revision `9cca9105474d6e0052b8e343c8ea21f3d1a7503c`. Its baseline `make check` passed before adaptation. Resolved worker SDK: `vgi-python 0.51.1`; RDF engine: `pyoxigraph 0.5.13`. The starter SDK constraints and recipes are preserved. The metadata gate has a scoped exemption for the `rdf_rows` example's pre-existing table requirement; that function is exercised by real SQL tests and the runnable demo. No public support/SLA policy is invented.
+Starter: [Query-farm/vgi-starter-python](https://github.com/Query-farm/vgi-starter-python), version 1.3.0, revision `9cca9105474d6e0052b8e343c8ea21f3d1a7503c`. Its baseline `make check` passed before adaptation. Resolved worker SDK: `vgi-python 0.51.1`; RDF engine: `pyoxigraph 0.5.13`. The starter SDK constraints and recipes are preserved. The metadata gate has scoped exemptions for the `rdf_rows` example's pre-existing table requirement and for the `rdf_tables` composed examples returning no rows on the linter's empty database; both are exercised by real SQL tests and the runnable demo. No public support/SLA policy is invented.
 
 Implementation: [storage.py](src/rdf_worker/storage.py), [model.py](src/rdf_worker/model.py), [codec.py](src/rdf_worker/codec.py), [catalog.py](src/rdf_worker/catalog.py), [functions.py](src/rdf_worker/functions.py). `make template-diff` can inspect upstream starter changes before an SDK upgrade.
 

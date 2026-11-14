@@ -16,6 +16,14 @@ from vgi_rpc import ArrowSerializableDataclass
 from .codec import pack_schema
 from .functions import RdfScan, ScanState, TableArgs, database
 from .limits import query_limits, setting
+from .meta import (
+    FOREIGN_KEY_EDGES_DESCRIPTION,
+    FOREIGN_KEY_EDGES_SQL,
+    ROWS_WITH_INCOMING_EDGES_DESCRIPTION,
+    ROWS_WITH_INCOMING_EDGES_SQL,
+    TABLE_GRAPH_SIZES_DESCRIPTION,
+    TABLE_GRAPH_SIZES_SQL,
+)
 from .model import RelationalGraph, Table, name_key
 from .scans import prepare_scan
 from .sparql import call_runner, describe_query, execute_query
@@ -146,7 +154,9 @@ class RdfTables(TableFunctionGenerator[MappingArgs, ScanState]):
             FunctionExample(
                 sql="SELECT count(*) AS objects FROM rdf.main.rdf_tables()",
                 description="Count mapped SQL objects by RDF role",
-            )
+            ),
+            FunctionExample(sql=TABLE_GRAPH_SIZES_SQL, description=TABLE_GRAPH_SIZES_DESCRIPTION),
+            FunctionExample(sql=FOREIGN_KEY_EDGES_SQL, description=FOREIGN_KEY_EDGES_DESCRIPTION),
         ]
 
     @classmethod
@@ -225,7 +235,8 @@ class RdfRows(RdfScan):
             FunctionExample(
                 sql="SELECT name, __rdf_iri FROM rdf.main.rdf_rows('main', 'people') ORDER BY name",
                 description="Find RDF identities for an existing people table with a name column",
-            )
+            ),
+            FunctionExample(sql=ROWS_WITH_INCOMING_EDGES_SQL, description=ROWS_WITH_INCOMING_EDGES_DESCRIPTION),
         ]
 
     @classmethod

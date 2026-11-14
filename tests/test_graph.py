@@ -10,6 +10,7 @@ import pytest
 from pyoxigraph import Literal, NamedNode, Quad
 from sql_support import connection, literal
 
+from rdf_worker.meta import FOREIGN_KEY_EDGES_SQL, ROWS_WITH_INCOMING_EDGES_SQL, TABLE_GRAPH_SIZES_SQL
 from rdf_worker.sparql import describe_query, execute_query, validate_query
 from rdf_worker.storage import Database
 
@@ -26,6 +27,20 @@ def test_sparql_types_and_query_forms(sql: Any) -> None:
     assert sql.execute(f"SELECT subject.value, object.value FROM rdf.main.rdf_sparql({literal(query)})").fetchall() == [
         ("urn:x", "hello")
     ]
+
+
+def test_composed_metadata_examples(sql: Any) -> None:
+    assert sql.execute(TABLE_GRAPH_SIZES_SQL).fetchall() == []
+    assert sql.execute(FOREIGN_KEY_EDGES_SQL).fetchall() == []
+    sql.execute("CREATE TABLE rdf.main.people(id INTEGER PRIMARY KEY, name VARCHAR)")
+    sql.execute("CREATE TABLE rdf.main.orders(id INTEGER, buyer INTEGER REFERENCES rdf.main.people(id))")
+    sql.execute("INSERT INTO rdf.main.people VALUES (1,'Ada'),(2,'Grace'),(3,'Linus')")
+    sql.execute("INSERT INTO rdf.main.orders VALUES (10,1),(11,1),(12,2),(13,NULL)")
+    sizes = sql.execute(TABLE_GRAPH_SIZES_SQL).fetchall()
+    assert [(schema, table) for schema, table, _ in sizes] == [("main", "orders"), ("main", "people")]
+    assert all(statements > 0 for *_, statements in sizes)
+    assert sql.execute(FOREIGN_KEY_EDGES_SQL).fetchall() == [("main", "orders", "people", 3)]
+    assert sql.execute(ROWS_WITH_INCOMING_EDGES_SQL).fetchall() == [("Ada", 2), ("Grace", 1), ("Linus", 0)]
 
 
 def test_sql_row_graph_join_and_fk_lifecycle(sql: Any) -> None:

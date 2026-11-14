@@ -13,6 +13,40 @@ DESCRIPTION = (
     "the two query models. Foreign keys produce transactional resource-to-resource RDF edges. "
     "The backend enforces CHECK constraints, but the tested SQL engines cannot send native CHECK definitions."
 )
+# Composed examples: each SQL string is defined once and shared by the schema-level list and the
+# example list of the function that drives the query.
+TABLE_GRAPH_SIZES_SQL = (
+    "SELECT t.schema_name, t.table_name, count(q.subject) AS statements "
+    "FROM rdf.main.rdf_tables() AS t LEFT JOIN rdf.main.rdf_quads() AS q ON q.graph = '<' || t.graph_iri || '>' "
+    "WHERE t.kind = 'table' GROUP BY t.schema_name, t.table_name ORDER BY t.schema_name, t.table_name"
+)
+TABLE_GRAPH_SIZES_DESCRIPTION = (
+    "Count the RDF statements stored in each SQL table's row graph by joining rdf_tables to rdf_quads"
+)
+FOREIGN_KEY_EDGES_SQL = (
+    "SELECT fk.schema_name, fk.table_name AS referencing_table, target.table_name AS referenced_table, "
+    "count(q.subject) AS edges FROM rdf.main.rdf_tables() AS fk "
+    "JOIN rdf.main.rdf_tables() AS target ON target.kind = 'table' AND target.iri = fk.target_iri "
+    "LEFT JOIN rdf.main.rdf_quads(graph_iri := 'urn:vgi:rdf:relationships') AS q ON q.predicate = '<' || fk.iri || '>' "
+    "WHERE fk.kind = 'foreign_key' GROUP BY fk.schema_name, fk.table_name, target.table_name "
+    "ORDER BY fk.schema_name, referencing_table, referenced_table"
+)
+FOREIGN_KEY_EDGES_DESCRIPTION = (
+    "Count the row-to-row RDF edges each foreign key has materialized, naming the referencing and referenced "
+    "tables, by joining rdf_tables to itself and to the relationships graph from rdf_quads"
+)
+ROWS_WITH_INCOMING_EDGES_SQL = (
+    "SELECT p.name, count(g.source_row) AS incoming_references FROM rdf.main.rdf_rows('main', 'people') AS p "
+    "LEFT JOIN rdf.main.rdf_sparql('SELECT ?source_row ?target_row WHERE { GRAPH <urn:vgi:rdf:relationships> "
+    "{ ?source_row ?relationship ?target_row } }') AS g ON g.target_row.value = p.__rdf_iri "
+    "GROUP BY p.name ORDER BY p.name"
+)
+ROWS_WITH_INCOMING_EDGES_DESCRIPTION = (
+    "Count the foreign-key references pointing at each person, including people with none, by joining rdf_rows "
+    "identities to SPARQL relationship edges; assumes people(id PRIMARY KEY, name) referenced by e.g. "
+    "orders(id, buyer REFERENCES people(id))"
+)
+
 SCHEMA_TAGS = {
     "vgi.title": "RDF",
     "vgi.subtitle": "SQL tables, SPARQL and graph traversal",
@@ -36,7 +70,10 @@ SCHEMA_TAGS = {
             {
                 "description": "Count RDF statements by graph",
                 "sql": "SELECT graph, count(*) AS statements FROM rdf.main.rdf_quads() GROUP BY graph ORDER BY graph",
-            }
+            },
+            {"description": TABLE_GRAPH_SIZES_DESCRIPTION, "sql": TABLE_GRAPH_SIZES_SQL},
+            {"description": FOREIGN_KEY_EDGES_DESCRIPTION, "sql": FOREIGN_KEY_EDGES_SQL},
+            {"description": ROWS_WITH_INCOMING_EDGES_DESCRIPTION, "sql": ROWS_WITH_INCOMING_EDGES_SQL},
         ]
     ),
 }
@@ -90,6 +127,13 @@ _GRAPH_TASKS = [
         "name": "inspect_row_identity",
         "prompt": "Create rdf.main.agent_people(name VARCHAR), insert Ada, then use rdf_rows to return name "
         "and whether its __rdf_iri starts with urn:vgi:rdf:table:.",
+    },
+    {
+        "name": "count_row_column_statements",
+        "prompt": "Create rdf.main.agent_contacts(name VARCHAR, email VARCHAR, phone VARCHAR) and insert "
+        "('Ada', 'ada@example.org', NULL) and ('Grace', NULL, NULL). Then, combining rdf_rows, rdf_quads and "
+        "rdf_tables, count for each row the RDF statements whose subject is that row's IRI and whose predicate "
+        "is one of the table's column IRIs. Return name and stored_columns (BIGINT), ordered by name.",
     },
 ]
 CATALOG_TAGS["vgi.agent_test_tasks"] = json.dumps(json.loads(CATALOG_TAGS["vgi.agent_test_tasks"]) + _GRAPH_TASKS)

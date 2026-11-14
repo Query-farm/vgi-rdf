@@ -18,3 +18,14 @@ tasks:
       - CREATE TABLE rdf.main.agent_people(name VARCHAR)
       - INSERT INTO rdf.main.agent_people VALUES ('Ada')
       - SELECT name, starts_with(__rdf_iri, 'urn:vgi:rdf:table:') FROM rdf.main.rdf_rows('main','agent_people')
+  - name: count_row_column_statements
+    reference_sql:
+      - CREATE TABLE rdf.main.agent_contacts(name VARCHAR, email VARCHAR, phone VARCHAR)
+      - INSERT INTO rdf.main.agent_contacts VALUES ('Ada', 'ada@example.org', NULL), ('Grace', NULL, NULL)
+      - >-
+        SELECT r.name, count(q.subject) AS stored_columns
+        FROM rdf.main.rdf_rows('main', 'agent_contacts') AS r
+        JOIN rdf.main.rdf_quads() AS q ON q.subject = '<' || r.__rdf_iri || '>'
+        JOIN rdf.main.rdf_tables() AS c
+          ON c.kind = 'column' AND c.table_name = 'agent_contacts' AND q.predicate = '<' || c.iri || '>'
+        GROUP BY r.name ORDER BY r.name
