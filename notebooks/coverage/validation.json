@@ -1,0 +1,462 @@
+{
+  "schema_version": 1,
+  "status": "met",
+  "meets_target": true,
+  "catalogs": {
+    "released": {
+      "catalog_status": "verified",
+      "revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+      "catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+      "collection_reconciled": true,
+      "denominator": 6,
+      "observed_objects": 6,
+      "required": 6,
+      "verified_count": 6,
+      "candidate_count": 0,
+      "fraction": 1.0,
+      "meets_target": true,
+      "exact_runtime_count": 6,
+      "runtime_revisions": [
+        "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d"
+      ],
+      "covered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_neighbors"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_quads"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_reachable"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_rows"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_sparql"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_tables"
+        }
+      ],
+      "uncovered": [],
+      "objects": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_neighbors",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_neighbors(VARCHAR, VARCHAR, BIGINT, BIGINT, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_quads",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_quads(VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_reachable",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_reachable(VARCHAR, BIGINT, BIGINT, VARCHAR, BIGINT, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_rows",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_rows(VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_sparql",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_sparql(VARCHAR, BOOLEAN, BIGINT, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_tables",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_tables(VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        }
+      ],
+      "issues": []
+    },
+    "current": {
+      "catalog_status": "verified",
+      "revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+      "catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+      "collection_reconciled": true,
+      "denominator": 6,
+      "observed_objects": 6,
+      "required": 6,
+      "verified_count": 6,
+      "candidate_count": 0,
+      "fraction": 1.0,
+      "meets_target": true,
+      "exact_runtime_count": 6,
+      "runtime_revisions": [
+        "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d"
+      ],
+      "covered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_neighbors"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_quads"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_reachable"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_rows"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_sparql"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_tables"
+        }
+      ],
+      "uncovered": [],
+      "objects": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_neighbors",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_neighbors(VARCHAR, VARCHAR, BIGINT, BIGINT, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_quads",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_quads(VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_reachable",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_reachable(VARCHAR, BIGINT, BIGINT, VARCHAR, BIGINT, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_rows",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_rows(VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_sparql",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_sparql(VARCHAR, BOOLEAN, BIGINT, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "rdf_tables",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "rdf_tables(VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        }
+      ],
+      "issues": []
+    }
+  },
+  "interface_drift": {
+    "known": true,
+    "current_only": [],
+    "released_only": [],
+    "changed": []
+  },
+  "notebooks": {
+    "01_follow_foreign_keys_across_query_models.ipynb": {
+      "verified": true,
+      "issues": []
+    },
+    "02_foreign_key_edits_move_graph_edges.ipynb": {
+      "verified": true,
+      "issues": []
+    }
+  },
+  "examples": [
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "rdf_rows"
+      },
+      "notebook": "01_follow_foreign_keys_across_query_models.ipynb",
+      "runtime_revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+      "runtime_catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "rdf_reachable"
+      },
+      "notebook": "01_follow_foreign_keys_across_query_models.ipynb",
+      "runtime_revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+      "runtime_catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "rdf_sparql"
+      },
+      "notebook": "01_follow_foreign_keys_across_query_models.ipynb",
+      "runtime_revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+      "runtime_catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "rdf_tables"
+      },
+      "notebook": "02_foreign_key_edits_move_graph_edges.ipynb",
+      "runtime_revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+      "runtime_catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "rdf_quads"
+      },
+      "notebook": "02_foreign_key_edits_move_graph_edges.ipynb",
+      "runtime_revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+      "runtime_catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "rdf_neighbors"
+      },
+      "notebook": "02_foreign_key_edits_move_graph_edges.ipynb",
+      "runtime_revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+      "runtime_catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+    }
+  ],
+  "issues": []
+}

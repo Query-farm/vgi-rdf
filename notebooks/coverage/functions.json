@@ -1,0 +1,290 @@
+{
+  "query": "SELECT * FROM duckdb_functions() WHERE database_name='rdf' ORDER BY schema_name,function_name",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "function_name",
+    "alias_of",
+    "function_type",
+    "description",
+    "comment",
+    "tags",
+    "return_type",
+    "parameters",
+    "parameter_types",
+    "varargs",
+    "macro_definition",
+    "has_side_effects",
+    "internal",
+    "extension_name",
+    "function_oid",
+    "examples",
+    "stability",
+    "categories"
+  ],
+  "rows": [
+    [
+      "rdf",
+      "22592",
+      "main",
+      "rdf_neighbors",
+      null,
+      "table",
+      "Find outgoing or incoming RDF relationship edges for one node",
+      null,
+      {
+        "vgi.category": "rdf",
+        "vgi.doc_llm": "Find resource-to-resource edges adjacent to node, a raw IRI or _:blank-node label. The default graph_iri is urn:vgi:rdf:relationships, containing derived SQL foreign-key edges. Use another graph_iri for imported RDF or empty for all graphs. predicate_iri optionally restricts edges; direction is out, in, or both. Returns source, predicate, target, graph and neighbor identifiers. Literals are not traversed. A default-graph edge has graph NULL. Results have no implicit ordering. max_rows, timeout_ms and deployment ceilings fail explicitly rather than truncate results.",
+        "vgi.doc_md": "Find resource-to-resource edges adjacent to node, a raw IRI or _:blank-node label. The default graph_iri is urn:vgi:rdf:relationships, containing derived SQL foreign-key edges. Use another graph_iri for imported RDF or empty for all graphs. predicate_iri optionally restricts edges; direction is out, in, or both. Returns source, predicate, target, graph and neighbor identifiers. Literals are not traversed. A default-graph edge has graph NULL. Results have no implicit ordering. max_rows, timeout_ms and deployment ceilings fail explicitly rather than truncate results.\n\n### Operation\n\nThe function reads the current attachment and participates in its SQL transaction. Use explicit SQL ordering when row order matters. A failure returns an error; retry the whole transaction after a serialization conflict. SQL examples are listed separately.",
+        "vgi.example_queries": "[{\"sql\": \"SELECT count(*) AS edges FROM rdf.main.rdf_neighbors('urn:example:alice')\", \"description\": \"Find the relationships of an example entity\"}]",
+        "vgi.executable_examples": "[{\"sql\": \"SELECT count(*) FROM rdf.main.rdf_neighbors('urn:example:absent')\", \"description\": \"An absent node has no neighbors\", \"expected_result\": [[0]]}]",
+        "vgi.keywords": "[\"rdf\", \"graph\", \"sql\", \"sparql\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"source\", \"type\": \"VARCHAR\", \"description\": \"Edge subject: raw IRI or _:blank-node label.\"}, {\"name\": \"predicate\", \"type\": \"VARCHAR\", \"description\": \"Raw relationship predicate IRI.\"}, {\"name\": \"target\", \"type\": \"VARCHAR\", \"description\": \"Edge object: raw IRI or _:blank-node label.\"}, {\"name\": \"graph\", \"type\": \"VARCHAR\", \"description\": \"Raw graph IRI or _:blank-node label; NULL for the default graph.\"}, {\"name\": \"neighbor\", \"type\": \"VARCHAR\", \"description\": \"Adjacent node relative to the requested starting node.\"}]",
+        "vgi.title": "Rdf Neighbors"
+      },
+      null,
+      [
+        "node",
+        "predicate_iri",
+        "max_rows",
+        "timeout_ms",
+        "graph_iri",
+        "direction"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT",
+        "BIGINT",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22596,
+      [
+        "SELECT count(*) AS edges FROM rdf.main.rdf_neighbors('urn:example:alice')"
+      ],
+      null,
+      []
+    ],
+    [
+      "rdf",
+      "22592",
+      "main",
+      "rdf_quads",
+      null,
+      "table",
+      "Inspect the persisted RDF dataset as subject, predicate, object and graph terms",
+      null,
+      {
+        "vgi.category": "rdf",
+        "vgi.doc_llm": "Inspect the attached database's actual RDF quads. The optional named graph_iri argument restricts inspection to one named graph. Returns subject, predicate, object and graph as `VARCHAR` N-Triples terms. Includes the catalog graph and each table's row graph. SQL NULL cells have no triple; rowId triples distinguish duplicate and all-NULL rows. Use SQL filters and aggregation to inspect graphs. Read-only and transaction-consistent.",
+        "vgi.doc_md": "## rdf_quads()\n\nUse `graph_iri := 'urn:vgi:rdf:catalog'` to select one graph, or omit it to read all graphs. Read the actual RDF storage as four `VARCHAR` columns: `subject`, `predicate`, `object`, `graph`. Terms use N-Triples syntax and literals retain datatype annotations. Catalog metadata lives in `<urn:vgi:rdf:catalog>`; table rows live in separate named graphs. NULL cells omit their property triple. This function does not mutate data.",
+        "vgi.example_queries": "[{\"sql\": \"SELECT graph, count(*) AS triples FROM rdf.main.rdf_quads() GROUP BY graph ORDER BY graph\", \"description\": \"Count stored RDF statements by named graph\"}, {\"sql\": \"SELECT predicate, count(*) AS statements FROM rdf.main.rdf_quads(graph_iri := 'urn:vgi:rdf:catalog') GROUP BY predicate ORDER BY predicate\", \"description\": \"Count metadata statements by predicate\"}, {\"sql\": \"SELECT count(*) AS schemas FROM rdf.main.rdf_quads() WHERE predicate = '<urn:vgi:rdf:schemaName>'\", \"description\": \"Count RDF schema resources\"}]",
+        "vgi.executable_examples": "[{\"description\": \"The main schema is stored in RDF\", \"sql\": \"SELECT count(*) AS main_schemas FROM rdf.main.rdf_quads() WHERE predicate = '<urn:vgi:rdf:schemaName>' AND object = '\\\"main\\\"'\", \"expected_result\": [[1]]}]",
+        "vgi.keywords": "[\"rdf\", \"triples\", \"quads\", \"graph\", \"inspect\", \"storage\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"subject\", \"type\": \"VARCHAR\", \"description\": \"RDF subject term.\"}, {\"name\": \"predicate\", \"type\": \"VARCHAR\", \"description\": \"RDF predicate term.\"}, {\"name\": \"object\", \"type\": \"VARCHAR\", \"description\": \"RDF object term with datatype.\"}, {\"name\": \"graph\", \"type\": \"VARCHAR\", \"description\": \"Named graph term.\"}]",
+        "vgi.title": "RDF Quads"
+      },
+      null,
+      [
+        "graph_iri"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22597,
+      [
+        "SELECT graph, count(*) AS triples FROM rdf.main.rdf_quads() GROUP BY graph ORDER BY graph",
+        "SELECT predicate, count(*) AS statements FROM rdf.main.rdf_quads(graph_iri := 'urn:vgi:rdf:catalog') GROUP BY predicate ORDER BY predicate",
+        "SELECT count(*) AS schemas FROM rdf.main.rdf_quads() WHERE predicate = '<urn:vgi:rdf:schemaName>'"
+      ],
+      null,
+      []
+    ],
+    [
+      "rdf",
+      "22592",
+      "main",
+      "rdf_reachable",
+      null,
+      "table",
+      "Traverse RDF relationships with cycle detection and bounded minimum-depth results",
+      null,
+      {
+        "vgi.category": "rdf",
+        "vgi.doc_llm": "Breadth-first RDF traversal starting from node. Returns each reachable node once with depth equal to the minimum number of edges from the start, excluding the start itself even when cycles exist. max_depth defaults to 8 and cannot exceed 64. graph_iri, predicate_iri and direction have the same meaning as rdf_neighbors. The default graph contains SQL foreign-key relationships. Traversal has row, examined-edge and wall-time limits; exceeding a limit raises an error. Order results explicitly, for example ORDER BY depth, node.",
+        "vgi.doc_md": "Breadth-first RDF traversal starting from node. Returns each reachable node once with depth equal to the minimum number of edges from the start, excluding the start itself even when cycles exist. max_depth defaults to 8 and cannot exceed 64. graph_iri, predicate_iri and direction have the same meaning as rdf_neighbors. The default graph contains SQL foreign-key relationships. Traversal has row, examined-edge and wall-time limits; exceeding a limit raises an error. Order results explicitly, for example ORDER BY depth, node.\n\n### Operation\n\nThe function reads the current attachment and participates in its SQL transaction. Use explicit SQL ordering when row order matters. A failure returns an error; retry the whole transaction after a serialization conflict. SQL examples are listed separately.",
+        "vgi.example_queries": "[{\"sql\": \"SELECT count(*) AS nodes FROM rdf.main.rdf_reachable('urn:example:alice', max_depth := 3)\", \"description\": \"Find entities up to three edges away from an example entity\"}]",
+        "vgi.executable_examples": "[{\"sql\": \"SELECT count(*) FROM rdf.main.rdf_reachable('urn:example:absent', max_depth := 3)\", \"description\": \"An absent node has no reachable neighbors\", \"expected_result\": [[0]]}]",
+        "vgi.keywords": "[\"rdf\", \"graph\", \"sql\", \"sparql\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"node\", \"type\": \"VARCHAR\", \"description\": \"Reachable node: raw IRI or _:blank-node label.\"}, {\"name\": \"depth\", \"type\": \"BIGINT\", \"description\": \"Minimum number of edges from the starting node.\"}]",
+        "vgi.title": "Rdf Reachable"
+      },
+      null,
+      [
+        "node",
+        "timeout_ms",
+        "max_depth",
+        "predicate_iri",
+        "max_rows",
+        "graph_iri",
+        "direction"
+      ],
+      [
+        "VARCHAR",
+        "BIGINT",
+        "BIGINT",
+        "VARCHAR",
+        "BIGINT",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22598,
+      [
+        "SELECT count(*) AS nodes FROM rdf.main.rdf_reachable('urn:example:alice', max_depth := 3)"
+      ],
+      null,
+      []
+    ],
+    [
+      "rdf",
+      "22592",
+      "main",
+      "rdf_rows",
+      null,
+      "table",
+      "Read a SQL table with its stable RDF row IRI for graph joins",
+      null,
+      {
+        "vgi.category": "rdf",
+        "vgi.doc_llm": "Read an existing SQL table with ordinary typed columns plus __rdf_iri containing its stable RDF row IRI. Supply raw schema and table names separately. If a user column already has that name, underscores are appended until it is unique. Identities survive updates but disappear on DELETE; replacement tables get new identities. Use these identifiers to join relational rows with graph queries. Requires a user-created table; the people example assumes CREATE TABLE people(name `VARCHAR`) has already run.",
+        "vgi.doc_md": "Read an existing SQL table with ordinary typed columns plus __rdf_iri containing its stable RDF row IRI. Supply raw schema and table names separately. If a user column already has that name, underscores are appended until it is unique. Identities survive updates but disappear on DELETE; replacement tables get new identities. Use these identifiers to join relational rows with graph queries. Requires a user-created table; the people example assumes CREATE TABLE people(name `VARCHAR`) has already run.\n\n### Operation\n\nThe function reads the current attachment and participates in its SQL transaction. Use explicit SQL ordering when row order matters. A failure returns an error; retry the whole transaction after a serialization conflict. SQL examples are listed separately.",
+        "vgi.example_queries": "[{\"sql\": \"SELECT name, __rdf_iri FROM rdf.main.rdf_rows('main', 'people') ORDER BY name\", \"description\": \"Find RDF identities for an existing people table with a name column\"}, {\"sql\": \"SELECT p.name, count(g.source_row) AS incoming_references FROM rdf.main.rdf_rows('main', 'people') AS p LEFT JOIN rdf.main.rdf_sparql('SELECT ?source_row ?target_row WHERE { GRAPH <urn:vgi:rdf:relationships> { ?source_row ?relationship ?target_row } }') AS g ON g.target_row.value = p.__rdf_iri GROUP BY p.name ORDER BY p.name\", \"description\": \"Count the foreign-key references pointing at each person, including people with none, by joining rdf_rows identities to SPARQL relationship edges; assumes people(id PRIMARY KEY, name) referenced by e.g. orders(id, buyer REFERENCES people(id))\"}]",
+        "vgi.keywords": "[\"rdf\", \"graph\", \"sql\", \"sparql\"]",
+        "vgi.result_dynamic_columns_md": "\nThe table selected by schema_name and table_name determines the ordinary columns:\n\n| Name | Type | Description |\n| --- | --- | --- |\n| name | VARCHAR | Example for a people(name VARCHAR) table; actual names and types come from the selected table. |\n| __rdf_iri | VARCHAR | Stable RDF row IRI; underscores are appended if necessary to avoid name collisions. |\n",
+        "vgi.title": "Rdf Rows"
+      },
+      null,
+      [
+        "schema_name",
+        "table_name"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22599,
+      [
+        "SELECT name, __rdf_iri FROM rdf.main.rdf_rows('main', 'people') ORDER BY name",
+        "SELECT p.name, count(g.source_row) AS incoming_references FROM rdf.main.rdf_rows('main', 'people') AS p LEFT JOIN rdf.main.rdf_sparql('SELECT ?source_row ?target_row WHERE { GRAPH <urn:vgi:rdf:relationships> { ?source_row ?relationship ?target_row } }') AS g ON g.target_row.value = p.__rdf_iri GROUP BY p.name ORDER BY p.name"
+      ],
+      null,
+      []
+    ],
+    [
+      "rdf",
+      "22592",
+      "main",
+      "rdf_sparql",
+      null,
+      "table",
+      "Query RDF with bounded local SPARQL and join the results with SQL tables",
+      null,
+      {
+        "vgi.category": "rdf",
+        "vgi.doc_llm": "Execute local read-only SPARQL SELECT, ASK, CONSTRUCT or DESCRIBE. SELECT variables become SQL columns of `STRUCT(kind, value, datatype, language)`, preserving unbound values as NULL; use column.value for an IRI or literal lexical value. ASK returns answer `BOOLEAN`; graph results return subject, predicate, object term structs. SERVICE and remote access are disabled. Use GRAPH clauses, or union_default := true. Results are frozen once per statement. max_rows (default 10000) and timeout_ms (default 30000) are hard bounds; operator ceilings also apply. A limit error fails the query instead of returning incomplete results.",
+        "vgi.doc_md": "Execute local read-only SPARQL SELECT, ASK, CONSTRUCT or DESCRIBE. SELECT variables become SQL columns of `STRUCT(kind, value, datatype, language)`, preserving unbound values as NULL; use column.value for an IRI or literal lexical value. ASK returns answer `BOOLEAN`; graph results return subject, predicate, object term structs. SERVICE and remote access are disabled. Use GRAPH clauses, or union_default := true. Results are frozen once per statement. max_rows (default 10000) and timeout_ms (default 30000) are hard bounds; operator ceilings also apply. A limit error fails the query instead of returning incomplete results.\n\n### Operation\n\nThe function reads the current attachment and participates in its SQL transaction. Use explicit SQL ordering when row order matters. A failure returns an error; retry the whole transaction after a serialization conflict. SQL examples are listed separately.",
+        "vgi.example_queries": "[{\"sql\": \"SELECT answer FROM rdf.main.rdf_sparql('ASK { GRAPH <urn:vgi:rdf:catalog> { ?s ?p ?o } }')\", \"description\": \"Check whether the RDF catalog contains statements\"}]",
+        "vgi.executable_examples": "[{\"sql\": \"SELECT answer FROM rdf.main.rdf_sparql('ASK { GRAPH <urn:vgi:rdf:catalog> { ?s ?p ?o } }')\", \"description\": \"Verify the catalog exists\", \"expected_result\": [[true]]}]",
+        "vgi.keywords": "[\"rdf\", \"graph\", \"sql\", \"sparql\"]",
+        "vgi.result_dynamic_columns_md": "\nSELECT results (one column per projected variable):\n\n| Name | Type | Description |\n| --- | --- | --- |\n| variable | STRUCT(kind VARCHAR, value VARCHAR, datatype VARCHAR, language VARCHAR) | Term or NULL. |\n\nASK results:\n\n| Name | Type | Description |\n| --- | --- | --- |\n| answer | BOOLEAN | Whether the pattern matches. |\n\nCONSTRUCT and DESCRIBE results:\n\n| Name | Type | Description |\n| --- | --- | --- |\n| subject | STRUCT(kind VARCHAR, value VARCHAR, datatype VARCHAR, language VARCHAR) | RDF triple subject. |\n| predicate | STRUCT(kind VARCHAR, value VARCHAR, datatype VARCHAR, language VARCHAR) | RDF triple predicate. |\n| object | STRUCT(kind VARCHAR, value VARCHAR, datatype VARCHAR, language VARCHAR) | RDF triple object. |\n",
+        "vgi.title": "Rdf Sparql"
+      },
+      null,
+      [
+        "query",
+        "union_default",
+        "timeout_ms",
+        "max_rows"
+      ],
+      [
+        "VARCHAR",
+        "BOOLEAN",
+        "BIGINT",
+        "BIGINT"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22600,
+      [
+        "SELECT answer FROM rdf.main.rdf_sparql('ASK { GRAPH <urn:vgi:rdf:catalog> { ?s ?p ?o } }')"
+      ],
+      null,
+      []
+    ],
+    [
+      "rdf",
+      "22592",
+      "main",
+      "rdf_tables",
+      null,
+      "table",
+      "Discover RDF identifiers for SQL tables, columns and foreign-key relationships",
+      null,
+      {
+        "vgi.category": "rdf",
+        "vgi.doc_llm": "Discover the mapping between SQL objects and RDF IRIs. Returns schema_name, table_name, kind (table, column, foreign_key), name, iri, graph_iri, target_iri. Use column IRIs in SPARQL and foreign-key predicates for traversal. target_iri is NULL except for foreign keys. An empty database has no mapped tables.",
+        "vgi.doc_md": "Discover the mapping between SQL objects and RDF IRIs. Returns schema_name, table_name, kind (table, column, foreign_key), name, iri, graph_iri, target_iri. Use column IRIs in SPARQL and foreign-key predicates for traversal. target_iri is NULL except for foreign keys. An empty database has no mapped tables.\n\n### Operation\n\nThe function reads the current attachment and participates in its SQL transaction. Use explicit SQL ordering when row order matters. A failure returns an error; retry the whole transaction after a serialization conflict. SQL examples are listed separately.",
+        "vgi.example_queries": "[{\"sql\": \"SELECT count(*) AS objects FROM rdf.main.rdf_tables()\", \"description\": \"Count mapped SQL objects by RDF role\"}, {\"sql\": \"SELECT t.schema_name, t.table_name, count(q.subject) AS statements FROM rdf.main.rdf_tables() AS t LEFT JOIN rdf.main.rdf_quads() AS q ON q.graph = '<' || t.graph_iri || '>' WHERE t.kind = 'table' GROUP BY t.schema_name, t.table_name ORDER BY t.schema_name, t.table_name\", \"description\": \"Count the RDF statements stored in each SQL table's row graph by joining rdf_tables to rdf_quads\"}, {\"sql\": \"SELECT fk.schema_name, fk.table_name AS referencing_table, target.table_name AS referenced_table, count(q.subject) AS edges FROM rdf.main.rdf_tables() AS fk JOIN rdf.main.rdf_tables() AS target ON target.kind = 'table' AND target.iri = fk.target_iri LEFT JOIN rdf.main.rdf_quads(graph_iri := 'urn:vgi:rdf:relationships') AS q ON q.predicate = '<' || fk.iri || '>' WHERE fk.kind = 'foreign_key' GROUP BY fk.schema_name, fk.table_name, target.table_name ORDER BY fk.schema_name, referencing_table, referenced_table\", \"description\": \"Count the row-to-row RDF edges each foreign key has materialized, naming the referencing and referenced tables, by joining rdf_tables to itself and to the relationships graph from rdf_quads\"}]",
+        "vgi.executable_examples": "[{\"sql\": \"SELECT count(*) FROM rdf.main.rdf_tables()\", \"description\": \"A fresh attachment contains no user tables\", \"expected_result\": [[0]]}]",
+        "vgi.keywords": "[\"rdf\", \"graph\", \"sql\", \"sparql\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"schema_name\", \"type\": \"VARCHAR\", \"description\": \"SQL schema containing the table.\"}, {\"name\": \"table_name\", \"type\": \"VARCHAR\", \"description\": \"SQL table name.\"}, {\"name\": \"kind\", \"type\": \"VARCHAR\", \"description\": \"table, column, or foreign_key.\"}, {\"name\": \"name\", \"type\": \"VARCHAR\", \"description\": \"Table, column, or constraint name.\"}, {\"name\": \"iri\", \"type\": \"VARCHAR\", \"description\": \"Raw RDF resource or predicate IRI.\"}, {\"name\": \"graph_iri\", \"type\": \"VARCHAR\", \"description\": \"Graph containing its RDF statements.\"}, {\"name\": \"target_iri\", \"type\": \"VARCHAR\", \"description\": \"Foreign-key target table IRI; NULL for other kinds.\"}]",
+        "vgi.title": "Rdf Tables"
+      },
+      null,
+      [
+        "schema_name"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22601,
+      [
+        "SELECT count(*) AS objects FROM rdf.main.rdf_tables()",
+        "SELECT t.schema_name, t.table_name, count(q.subject) AS statements FROM rdf.main.rdf_tables() AS t LEFT JOIN rdf.main.rdf_quads() AS q ON q.graph = '<' || t.graph_iri || '>' WHERE t.kind = 'table' GROUP BY t.schema_name, t.table_name ORDER BY t.schema_name, t.table_name",
+        "SELECT fk.schema_name, fk.table_name AS referencing_table, target.table_name AS referenced_table, count(q.subject) AS edges FROM rdf.main.rdf_tables() AS fk JOIN rdf.main.rdf_tables() AS target ON target.kind = 'table' AND target.iri = fk.target_iri LEFT JOIN rdf.main.rdf_quads(graph_iri := 'urn:vgi:rdf:relationships') AS q ON q.predicate = '<' || fk.iri || '>' WHERE fk.kind = 'foreign_key' GROUP BY fk.schema_name, fk.table_name, target.table_name ORDER BY fk.schema_name, referencing_table, referenced_table"
+      ],
+      null,
+      []
+    ]
+  ]
+}

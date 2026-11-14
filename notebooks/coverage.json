@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-release.json",
+      "sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T22:26:25.785592+00:00",
+        "catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+        "notes": "All six actual public functions, no preexisting tables/views. Four explicitly table_only internal handlers documented; dynamic user-created tables are not fixed API names. Current source equals publicv0.2.0 runtime revision; source CI reused."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T22:26:25.785592+00:00",
+        "catalog_sha256": "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+        "notes": "All six actual public functions, no preexisting tables/views. Four explicitly table_only internal handlers documented; dynamic user-created tables are not fixed API names. Current source equals publicv0.2.0 runtime revision; source CI reused."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_follow_foreign_keys_across_query_models.ipynb",
+      "sha256": "8b5d128e6f2296ab7f92bb2a7cd63737d027cf7075f13b423acc226dfde149d5",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "b37bc6d694b12f5d0566611448aa6ecf865a6f04eb6cfc192443f7b41748edae"
+      }
+    },
+    {
+      "path": "02_foreign_key_edits_move_graph_edges.ipynb",
+      "sha256": "f24ba7d40d8d84658c803c45c0e2c18cd60036c593b9fe9d95d30f606805b5f8",
+      "execution": {
+        "path": "coverage/run-02.json",
+        "sha256": "fd38b790ae9e54b28d969b959a0dc593d68e4e6704dc3f6c5014a4cff944b707"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "rdf_rows"
+      },
+      "notebook": "01_follow_foreign_keys_across_query_models.ipynb",
+      "sql": [
+        {
+          "cell": "3a71578b",
+          "reference": "rdf.main.rdf_rows"
+        },
+        {
+          "cell": "fd80f6eb",
+          "reference": "rdf.main.rdf_rows"
+        }
+      ],
+      "narrative_cells": [
+        "0c311750"
+      ],
+      "result_cells": [
+        "a97d9ddb",
+        "8ce1d91a"
+      ],
+      "interpretation_cells": [
+        "df8d6261",
+        "8ce1d91a"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T22:26:25.785592+00:00",
+        "notebook_sha256": "8b5d128e6f2296ab7f92bb2a7cd63737d027cf7075f13b423acc226dfde149d5",
+        "catalog_sha256": [
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+        ],
+        "purpose": "Map typed ledger rows to stable RDF identities and reconcile rollback.",
+        "finding": "Four typed tables form an explicit known three-edge lineage; complete row and identity multisets are restored after a tentative amount update."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "rdf_reachable"
+      },
+      "notebook": "01_follow_foreign_keys_across_query_models.ipynb",
+      "sql": [
+        {
+          "cell": "3a71578b",
+          "reference": "rdf.main.rdf_reachable"
+        }
+      ],
+      "narrative_cells": [
+        "0c311750"
+      ],
+      "result_cells": [
+        "a97d9ddb",
+        "eb0999df",
+        "8ce1d91a"
+      ],
+      "interpretation_cells": [
+        "df8d6261",
+        "3272dc75"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T22:26:25.785592+00:00",
+        "notebook_sha256": "8b5d128e6f2296ab7f92bb2a7cd63737d027cf7075f13b423acc226dfde149d5",
+        "catalog_sha256": [
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+        ],
+        "purpose": "Compare bounded minimum-depth traversal with complete known SQL lineage.",
+        "finding": "Depth2 returns order/customer; depth3 also returns region. Start excluded, complete returned node/depth multiset matches expected lineage, ledger and revenue stay fixed."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "rdf_sparql"
+      },
+      "notebook": "01_follow_foreign_keys_across_query_models.ipynb",
+      "sql": [
+        {
+          "cell": "005b6e54",
+          "reference": "rdf.main.rdf_sparql"
+        }
+      ],
+      "narrative_cells": [
+        "6be49981"
+      ],
+      "result_cells": [
+        "31365e9d",
+        "040e76ea",
+        "8ce1d91a"
+      ],
+      "interpretation_cells": [
+        "8efcf441",
+        "3272dc75"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T22:26:25.785592+00:00",
+        "notebook_sha256": "8b5d128e6f2296ab7f92bb2a7cd63737d027cf7075f13b423acc226dfde149d5",
+        "catalog_sha256": [
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+        ],
+        "purpose": "Reconcile three-hop RDF paths with typed SQL revenue.",
+        "finding": "Six line items map once each to a region; full SQL/SPARQL aggregate multisets agree at North350/South170 USD, preserving the negative30USD credit. Two views of one store are not independent source verification."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "rdf_tables"
+      },
+      "notebook": "02_foreign_key_edits_move_graph_edges.ipynb",
+      "sql": [
+        {
+          "cell": "mapping",
+          "reference": "rdf.main.rdf_tables"
+        }
+      ],
+      "narrative_cells": [
+        "mapping-story"
+      ],
+      "result_cells": [
+        "mapping",
+        "quads-result",
+        "check-results"
+      ],
+      "interpretation_cells": [
+        "mapping-story",
+        "quads-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T22:26:25.785592+00:00",
+        "notebook_sha256": "f24ba7d40d8d84658c803c45c0e2c18cd60036c593b9fe9d95d30f606805b5f8",
+        "catalog_sha256": [
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+        ],
+        "purpose": "Discover table, column and foreign-key identifiers instead of inventing predicates.",
+        "finding": "Mapping distinguishes scalar-column predicates from resource relationships. It drives exact stored-property and foreign-key edge reconciliations, including an unassigned task."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "rdf_quads"
+      },
+      "notebook": "02_foreign_key_edits_move_graph_edges.ipynb",
+      "sql": [
+        {
+          "cell": "create",
+          "reference": "rdf.main.rdf_quads"
+        },
+        {
+          "cell": "quads",
+          "reference": "rdf.main.rdf_quads"
+        },
+        {
+          "cell": "after",
+          "reference": "rdf.main.rdf_quads"
+        }
+      ],
+      "narrative_cells": [
+        "input-story",
+        "mapping-story",
+        "checks-story"
+      ],
+      "result_cells": [
+        "quads-result",
+        "plot",
+        "check-results"
+      ],
+      "interpretation_cells": [
+        "quads-result",
+        "check-results"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T22:26:25.785592+00:00",
+        "notebook_sha256": "f24ba7d40d8d84658c803c45c0e2c18cd60036c593b9fe9d95d30f606805b5f8",
+        "catalog_sha256": [
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+        ],
+        "purpose": "Inspect actual RDF terms and preserve NULL semantics across committed changes.",
+        "finding": "Three assigned tasks each have three stored column properties; NULL-owner task has two. Three relationship edges match typed SQL; exactly one edge changes and all stable identities survive read-only reopen."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "rdf_neighbors"
+      },
+      "notebook": "02_foreign_key_edits_move_graph_edges.ipynb",
+      "sql": [
+        {
+          "cell": "preview-capture",
+          "reference": "rdf.main.rdf_neighbors"
+        },
+        {
+          "cell": "rollback",
+          "reference": "rdf.main.rdf_neighbors"
+        },
+        {
+          "cell": "after",
+          "reference": "rdf.main.rdf_neighbors"
+        }
+      ],
+      "narrative_cells": [
+        "preview-story",
+        "commit-story"
+      ],
+      "result_cells": [
+        "rollback",
+        "rollback-check",
+        "plot",
+        "check-results"
+      ],
+      "interpretation_cells": [
+        "rollback-check",
+        "plot",
+        "experiment"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T22:26:25.785592+00:00",
+        "notebook_sha256": "f24ba7d40d8d84658c803c45c0e2c18cd60036c593b9fe9d95d30f606805b5f8",
+        "catalog_sha256": [
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c",
+          "6ebfeeb8b053c80667f3d8c27ce27234d4bcacc1940a70e585408814ace36f1c"
+        ],
+        "purpose": "Observe a foreign-key edge inside a transaction, after rollback and after committed reopen.",
+        "finding": "Tentative destination is visible inside transaction, rollback restores Aster, and commit persists Briar or experimentCedar. Predicate/direction and target IRI match the typed owner; four tasks and one unassigned row remain."
+      }
+    }
+  ]
+}

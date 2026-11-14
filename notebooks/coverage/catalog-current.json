@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "repository": "Query-farm/vgi-rdf",
+  "revision": "6ea6da05f7628ac4116bbbbdf6ea5bb96e51053d",
+  "captured_at": "2026-11-14T22:16:11.990988+00:00",
+  "default_schema": "main",
+  "scope": "all_public_functions_and_tables",
+  "complete": true,
+  "objects": [
+    {
+      "schema": "main",
+      "name": "rdf_neighbors",
+      "kind": "function",
+      "signatures": [
+        "rdf_neighbors(VARCHAR, VARCHAR, BIGINT, BIGINT, VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "rdf_quads",
+      "kind": "function",
+      "signatures": [
+        "rdf_quads(VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "rdf_reachable",
+      "kind": "function",
+      "signatures": [
+        "rdf_reachable(VARCHAR, BIGINT, BIGINT, VARCHAR, BIGINT, VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "rdf_rows",
+      "kind": "function",
+      "signatures": [
+        "rdf_rows(VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "rdf_sparql",
+      "kind": "function",
+      "signatures": [
+        "rdf_sparql(VARCHAR, BOOLEAN, BIGINT, BIGINT) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "rdf_tables",
+      "kind": "function",
+      "signatures": [
+        "rdf_tables(VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "coverage/functions.json",
+      "sha256": "0c4f390f3f75d2633d7b6a21545d02aea99c8d82bcc6fbb237464dd786e2c2c5",
+      "description": "Complete real released runtime functions export"
+    },
+    {
+      "path": "coverage/tables.json",
+      "sha256": "1eb09b2e0983e3b7decc3f6eb4a8eb605df334e4936849dab202f11c2b2df2ea",
+      "description": "Complete real released runtime tables export"
+    },
+    {
+      "path": "coverage/views.json",
+      "sha256": "1fcc8130602e35e22f8cb1e56da7f6c93cd254ca010424c1371369dfd9a8e304",
+      "description": "Complete real released runtime views export"
+    },
+    {
+      "path": "coverage/current-source-review.md",
+      "sha256": "839d0ebcd6b682561e8653834ffa04ce62081f7feb0e402e67624325210b4ab2",
+      "description": "Complete source and visibility audit; current and release revision identical"
+    }
+  ]
+}

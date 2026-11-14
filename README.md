@@ -322,3 +322,10 @@ Implementation: [storage.py](src/rdf_worker/storage.py), [model.py](src/rdf_work
 ## Executed SQL notebook
 
 See [notebooks](notebooks/README.md) for a portable, executed Haybarn walkthrough with charts and a separate parameter experiment.
+
+## Notebook examples
+
+[Two executed SQL-first notebooks](notebooks/README.md) explore bounded foreign-key
+lineage and SQL/SPARQL revenue reconciliation, then transaction-consistent graph
+edits with rollback, commit and read-only reopening. They use the public v0.2.0
+release, synthetic owned data, vector figures and direct Open in Colab links.
