@@ -9,6 +9,7 @@
 - Hardened write-intent fencing, commit publication, process-death recovery and disk-full handling; added lease expiry, receipt retention, status and integrity auditing.
 - Added authenticated HTTP deployment, confined database paths, server-enforced read-only mode, query deadlines/resource bounds and a constrained Docker Compose profile.
 - Added runnable SQL/graph examples, crash/concurrency/security tests, Linux container tests, and a production-image SQL/backup/restart lifecycle check.
+- Added composed catalog examples combining `rdf_tables`, `rdf_quads`, `rdf_rows` and `rdf_sparql` (per-table statement counts, foreign-key edges per relationship, incoming references per row), plus a composed agent task.
 
 ## 0.1.0
 
