@@ -120,7 +120,14 @@ CATALOG_TAGS = {
         "## RDF database worker\n\n" + DESCRIPTION + "\n\n"
         "SQL data and definitions live in an Oxigraph dataset. "
         "The database directory contains immutable committed generations and private transaction workspaces. "
-        "Commit publishes a complete generation; rollback discards private writes."
+        "Commit publishes a complete generation; rollback discards private writes.\n\n"
+        "## Sources and references\n\n"
+        "- [Oxigraph](https://github.com/oxigraph/oxigraph) and its Python binding "
+        "[pyoxigraph](https://pyoxigraph.readthedocs.io/) — the RDF store and SPARQL engine underneath\n"
+        "- [RDF 1.1 Concepts](https://www.w3.org/TR/rdf11-concepts/) — the IRI, literal, datatype and "
+        "language-tag model the stored rows and returned terms follow\n"
+        "- [SPARQL 1.1 Query Language](https://www.w3.org/TR/sparql11-query/) — the query language "
+        "`rdf_sparql` accepts"
     ),
     "vgi.title": "VGI RDF Database",
     "vgi.subtitle": "Transactional SQL tables stored as RDF graphs",

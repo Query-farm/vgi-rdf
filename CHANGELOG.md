@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- Docs link to upstream: the catalog documentation now links Oxigraph, pyoxigraph, W3C RDF 1.1 Concepts and SPARQL 1.1 Query (vgi-lint VGI183).
+
 ## 0.2.2
 
 - Every catalog example now shows real output in a fresh session. The `rdf_neighbors` and `rdf_reachable` examples queried `urn:example:alice`, which nothing creates, so they always returned 0; the `rdf_tables` and `rdf_rows` examples needed user tables and returned no rows or failed. They are now executable examples that create a small people/orders dataset inside a transaction, run the query with its expected result, and roll back.
