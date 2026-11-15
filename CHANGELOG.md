@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Shortened the `rdf` catalog comment (and the bundled starter example catalog's) to one plain-text sentence; the full description stays in the catalog `vgi.doc_md` and `vgi.doc_llm` tags.
+
 ## 0.2.0
 
 - Added local SPARQL SELECT/ASK/CONSTRUCT/DESCRIBE, typed RDF terms, mapping discovery, stable row identities, neighbors and bounded cycle-safe reachability.

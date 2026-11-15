@@ -52,6 +52,12 @@ def column(name: str, type_: pa.DataType, comment: str, *, nullable: bool = True
     return pa.field(name, type_, nullable=nullable, metadata={b"comment": comment.encode()})
 
 
+# Catalog-level one-line description (VGI001): plain text, no Markdown, at most 300 characters.
+CATALOG_COMMENT = (
+    "Example DuckDB functions from the Query.Farm VGI starter template: a scalar, a deterministic "
+    "table function and a paginated REST API reader, meant to be renamed and replaced."
+)
+
 CATALOG_DOC_LLM = (
     "An example VGI worker generated from the Query.Farm starter template. It shows the three "
     "shapes most workers need: a vectorized scalar function with an overload, a deterministic "

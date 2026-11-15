@@ -26,7 +26,7 @@ from .fetch_items import API_SECRET_TYPE, FetchItems
 from .greet import Greet, GreetWithStyle
 from .sequence import SequenceTable
 from .starter_meta import (
-    CATALOG_DOC_MD,
+    CATALOG_COMMENT,
     CATALOG_NAME,
     CATALOG_TAGS,
     SCHEMA_CATEGORIES,
@@ -65,7 +65,7 @@ class RdfWorker(Worker):
 
     catalog = Catalog(
         name=CATALOG_NAME,
-        comment=CATALOG_DOC_MD,
+        comment=CATALOG_COMMENT,
         source_url=SOURCE_URL,
         tags=CATALOG_TAGS,
         schemas=[

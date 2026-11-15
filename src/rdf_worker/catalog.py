@@ -43,7 +43,7 @@ from .config import database_path, forced_read_only
 from .functions import INTERNAL_FUNCTIONS, RdfQuads, database
 from .graph_functions import GRAPH_FUNCTIONS
 from .graphs import upgrade
-from .meta import CATALOG_TAGS, DESCRIPTION, SCHEMA_TAGS
+from .meta import CATALOG_COMMENT, CATALOG_TAGS, DESCRIPTION, SCHEMA_TAGS
 from .model import RelationalGraph, Table, name_key
 from .storage import Database
 
@@ -51,7 +51,7 @@ CATALOG = Catalog(
     name="rdf",
     default_schema="main",
     source_url=CATALOG_TAGS["vgi.source_url"],
-    comment=DESCRIPTION,
+    comment=CATALOG_COMMENT,
     tags=CATALOG_TAGS,
     schemas=[
         Schema(

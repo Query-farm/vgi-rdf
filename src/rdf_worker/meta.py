@@ -3,6 +3,11 @@
 import json
 
 CATALOG_NAME = "rdf"
+# Catalog-level one-line description (VGI001): plain text, no Markdown, at most 300 characters.
+CATALOG_COMMENT = (
+    "Transactional SQL tables stored as RDF in an Oxigraph dataset, so the same data can be queried "
+    "as ordinary SQL rows or with local SPARQL and graph traversal."
+)
 DESCRIPTION = (
     "Persistent SQL tables backed by an Oxigraph RDF dataset. Supports SELECT, INSERT, UPDATE, DELETE, "
     "CREATE/DROP TABLE, schemas, RETURNING, defaults, NOT NULL, primary/unique keys and immediate "
