@@ -23,12 +23,12 @@ ignore = [
 # and uncomment the next line. Only new findings fail after that.
 # baseline = "vgi-lint-baseline"
 
+# The RDF worker serves one attachment from one process, so parallel cursors only queue behind each
+# other. Run examples one at a time so each executable example's timing reflects its own cost.
+[execution]
+concurrency = 1
+
 [per_object."rdf.main.rdf_rows"]
 ignore = [
-  { code = "VGI901", kind = "domain-exemption", reason = "rdf_rows binds the schema of a user-created table. Its documented people example requires that table; the linter attaches an empty database without post-attach fixture setup. The same function is exercised through real SQL in tests/test_graph.py, test/sql/graphs.test on all transports, and examples/graph_demo.py." },
-]
-
-[per_object."rdf.main.rdf_tables"]
-ignore = [
-  { code = "VGI902", kind = "domain-exemption", reason = "The composed table-graph-size and foreign-key-edge examples summarize user tables, and the linter attaches a fresh database with none, so they correctly return no rows there. Both are executed against populated tables in tests/test_graph.py::test_composed_metadata_examples." },
+  { code = "VGI901", kind = "domain-exemption", reason = "rdf_rows binds the schema of a user-created table, and the linter attaches an empty database, so the illustrative people example cannot bind there. Its executable examples create a people/orders dataset in a rolled-back transaction and assert real output (VGI906/VGI907)." },
 ]

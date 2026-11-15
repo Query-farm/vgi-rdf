@@ -18,8 +18,8 @@ DESCRIPTION = (
     "the two query models. Foreign keys produce transactional resource-to-resource RDF edges. "
     "The backend enforces CHECK constraints, but the tested SQL engines cannot send native CHECK definitions."
 )
-# Composed examples: each SQL string is defined once and shared by the schema-level list and the
-# example list of the function that drives the query.
+# Composed examples: each SQL string is defined once and shared by the executable examples of the
+# function that drives the query and the tests that check them.
 TABLE_GRAPH_SIZES_SQL = (
     "SELECT t.schema_name, t.table_name, count(q.subject) AS statements "
     "FROM rdf.main.rdf_tables() AS t LEFT JOIN rdf.main.rdf_quads() AS q ON q.graph = '<' || t.graph_iri || '>' "
@@ -48,9 +48,43 @@ ROWS_WITH_INCOMING_EDGES_SQL = (
 )
 ROWS_WITH_INCOMING_EDGES_DESCRIPTION = (
     "Count the foreign-key references pointing at each person, including people with none, by joining rdf_rows "
-    "identities to SPARQL relationship edges; assumes people(id PRIMARY KEY, name) referenced by e.g. "
-    "orders(id, buyer REFERENCES people(id))"
+    "identities to SPARQL relationship edges"
 )
+# Answers from inline SPARQL VALUES, so it shows typed RDF terms even in a fresh, empty database.
+SPARQL_VALUES_SQL = (
+    "SELECT person.value AS person, name.value AS name, name.language AS language FROM rdf.main.rdf_sparql("
+    '\'SELECT ?person ?name WHERE { VALUES (?person ?name) { (<urn:example:ada> "Ada"@en) '
+    '(<urn:example:grace> "Grace Hopper"@en) } }\') ORDER BY name'
+)
+SPARQL_VALUES_DESCRIPTION = "Return inline SPARQL VALUES as IRI and language-tagged literal terms"
+
+# A fresh attachment holds no user tables, so examples over tables, rows and relationship edges first
+# create a small people/orders dataset. The foreign key materializes one RDF edge per order. Everything
+# runs inside one transaction that is rolled back, so the example leaves the database unchanged.
+DEMO_SETUP = [
+    "BEGIN",
+    "CREATE TABLE rdf.main.people(id INTEGER PRIMARY KEY, name VARCHAR)",
+    "CREATE TABLE rdf.main.orders(id INTEGER PRIMARY KEY, buyer INTEGER REFERENCES rdf.main.people(id))",
+    "INSERT INTO rdf.main.people VALUES (1, 'Ada'), (2, 'Grace'), (3, 'Linus')",
+    "INSERT INTO rdf.main.orders VALUES (10, 1), (11, 1), (12, 2)",
+]
+DEMO_DESCRIPTION = "people (Ada, Grace, Linus) and orders 10 and 11 bought by Ada and 12 by Grace, rolled back after"
+
+
+def demo_example(
+    description: str, sql: str, expected: list[list[object]], setup: tuple[str, ...] = ()
+) -> dict[str, object]:
+    """Build a self-contained executable example over the rolled-back people/orders dataset."""
+    return {
+        "description": f"{description}; uses a sample of {DEMO_DESCRIPTION}",
+        "sql": [
+            *DEMO_SETUP,
+            *setup,
+            {"description": description, "sql": sql, "expected_result": expected},
+            "ROLLBACK",
+        ],
+    }
+
 
 SCHEMA_TAGS = {
     "vgi.title": "RDF",
@@ -76,9 +110,7 @@ SCHEMA_TAGS = {
                 "description": "Count RDF statements by graph",
                 "sql": "SELECT graph, count(*) AS statements FROM rdf.main.rdf_quads() GROUP BY graph ORDER BY graph",
             },
-            {"description": TABLE_GRAPH_SIZES_DESCRIPTION, "sql": TABLE_GRAPH_SIZES_SQL},
-            {"description": FOREIGN_KEY_EDGES_DESCRIPTION, "sql": FOREIGN_KEY_EDGES_SQL},
-            {"description": ROWS_WITH_INCOMING_EDGES_DESCRIPTION, "sql": ROWS_WITH_INCOMING_EDGES_SQL},
+            {"description": SPARQL_VALUES_DESCRIPTION, "sql": SPARQL_VALUES_SQL},
         ]
     ),
 }
@@ -95,6 +127,8 @@ CATALOG_TAGS = {
     "vgi.license": "0BSD",
     "vgi.author": "Query.Farm",
     "vgi.source_url": "https://github.com/Query-farm/vgi-rdf",
+    "vgi.support_contact": "https://github.com/Query-farm/vgi-rdf/issues",
+    "vgi.support_policy_url": "https://github.com/Query-farm/vgi-rdf#support",
     "vgi.copyright": "Copyright 2026 Query.Farm LLC",
     "vgi.icon_url": "https://query.farm/media-kit/products/vgi/vgi-logo.png",
     "vgi.agent_test_tasks": json.dumps(

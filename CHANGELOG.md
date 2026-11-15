@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+- Every catalog example now shows real output in a fresh session. The `rdf_neighbors` and `rdf_reachable` examples queried `urn:example:alice`, which nothing creates, so they always returned 0; the `rdf_tables` and `rdf_rows` examples needed user tables and returned no rows or failed. They are now executable examples that create a small people/orders dataset inside a transaction, run the query with its expected result, and roll back.
+- `rdf_sparql` gains an inline SPARQL `VALUES` example that returns typed terms without stored data; it replaces the table-dependent composed examples in the schema-level list.
+- Examples that intentionally return 0 (absent nodes, a fresh attachment's tables) say so in their descriptions.
+- `rdf_tables`, `rdf_neighbors` and `rdf_reachable` keep one illustrative example that is honestly 0 in a fresh database; `rdf_rows` keeps its illustrative people example, which needs that table. Removed the `rdf_tables` VGI902 waiver, ran vgi-lint examples one at a time (the worker serves an attachment from one process), and added the catalog support contact and policy tags.
+
 ## 0.2.1
 
 - Shortened the `rdf` catalog comment (and the bundled starter example catalog's) to one plain-text sentence; the full description stays in the catalog `vgi.doc_md` and `vgi.doc_llm` tags.

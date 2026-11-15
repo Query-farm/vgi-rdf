@@ -21,8 +21,11 @@ from .meta import (
     FOREIGN_KEY_EDGES_SQL,
     ROWS_WITH_INCOMING_EDGES_DESCRIPTION,
     ROWS_WITH_INCOMING_EDGES_SQL,
+    SPARQL_VALUES_DESCRIPTION,
+    SPARQL_VALUES_SQL,
     TABLE_GRAPH_SIZES_DESCRIPTION,
     TABLE_GRAPH_SIZES_SQL,
+    demo_example,
 )
 from .model import RelationalGraph, Table, name_key
 from .scans import prepare_scan
@@ -84,7 +87,8 @@ class RdfSparql(TableFunctionGenerator[SparqlArgs, QueryState]):
             FunctionExample(
                 sql="SELECT answer FROM rdf.main.rdf_sparql('ASK { GRAPH <urn:vgi:rdf:catalog> { ?s ?p ?o } }')",
                 description="Check whether the RDF catalog contains statements",
-            )
+            ),
+            FunctionExample(sql=SPARQL_VALUES_SQL, description=SPARQL_VALUES_DESCRIPTION),
         ]
 
     @classmethod
@@ -150,13 +154,14 @@ class RdfTables(TableFunctionGenerator[MappingArgs, ScanState]):
 
         name = "rdf_tables"
         description = "Discover RDF identifiers for SQL tables, columns and foreign-key relationships"
-        examples = [
+        # Useful mapping queries need user tables, which a fresh attachment lacks. The self-contained
+        # demonstrations are executable examples that create and roll back a small dataset.
+        examples: ClassVar[list[FunctionExample]] = [
             FunctionExample(
-                sql="SELECT count(*) AS objects FROM rdf.main.rdf_tables()",
-                description="Count mapped SQL objects by RDF role",
-            ),
-            FunctionExample(sql=TABLE_GRAPH_SIZES_SQL, description=TABLE_GRAPH_SIZES_DESCRIPTION),
-            FunctionExample(sql=FOREIGN_KEY_EDGES_SQL, description=FOREIGN_KEY_EDGES_DESCRIPTION),
+                sql="SELECT count(*) AS mapped_objects FROM rdf.main.rdf_tables()",
+                description="Count mapped tables, columns and foreign keys; a fresh database has none, so this is "
+                "0 until you create a table",
+            )
         ]
 
     @classmethod
@@ -231,12 +236,13 @@ class RdfRows(RdfScan):
         projection_pushdown = False
         filter_pushdown = False
         auto_apply_filters = False
-        examples = [
+        # rdf_rows reads a user table, which a fresh attachment lacks; the executable examples create one.
+        examples: ClassVar[list[FunctionExample]] = [
             FunctionExample(
                 sql="SELECT name, __rdf_iri FROM rdf.main.rdf_rows('main', 'people') ORDER BY name",
-                description="Find RDF identities for an existing people table with a name column",
-            ),
-            FunctionExample(sql=ROWS_WITH_INCOMING_EDGES_SQL, description=ROWS_WITH_INCOMING_EDGES_DESCRIPTION),
+                description="Find the RDF row IRI of each person; fails unless a people table with a name column "
+                "exists, as in the executable examples",
+            )
         ]
 
     @classmethod
@@ -284,10 +290,11 @@ def graph_metadata(function: Any, documentation: str, *, executable: list[dict[s
         "The function reads the current attachment and participates in its SQL transaction. "
         "Use explicit SQL ordering when row order matters. A failure returns an error; "
         "retry the whole transaction after a serialization conflict. SQL examples are listed separately.",
-        "vgi.example_queries": json.dumps(
-            [{"sql": e.sql, "description": e.description} for e in function.Meta.examples]
-        ),
     }
+    if function.Meta.examples:
+        function.Meta.tags["vgi.example_queries"] = json.dumps(
+            [{"sql": e.sql, "description": e.description} for e in function.Meta.examples]
+        )
     if executable is not None:
         function.Meta.tags["vgi.executable_examples"] = json.dumps(executable)
     if hasattr(function, "FIXED_SCHEMA"):
@@ -313,7 +320,16 @@ graph_metadata(
     "Results are frozen once per statement. max_rows (default 10000) and timeout_ms (default 30000) are hard bounds; "
     "operator ceilings also apply. A limit error fails the query instead of returning incomplete results.",
     executable=[
-        {"sql": RdfSparql.Meta.examples[0].sql, "description": "Verify the catalog exists", "expected_result": [[True]]}
+        {
+            "sql": RdfSparql.Meta.examples[0].sql,
+            "description": "Verify the catalog exists",
+            "expected_result": [[True]],
+        },
+        {
+            "sql": SPARQL_VALUES_SQL,
+            "description": SPARQL_VALUES_DESCRIPTION,
+            "expected_result": [["urn:example:ada", "Ada", "en"], ["urn:example:grace", "Grace Hopper", "en"]],
+        },
     ],
 )
 graph_metadata(
@@ -325,9 +341,20 @@ graph_metadata(
     executable=[
         {
             "sql": "SELECT count(*) FROM rdf.main.rdf_tables()",
-            "description": "A fresh attachment contains no user tables",
+            "description": "A fresh attachment contains no user tables, so the count is intentionally 0",
             "expected_result": [[0]],
-        }
+        },
+        demo_example(
+            "Count mapped SQL objects by RDF role",
+            "SELECT kind, count(*) AS objects FROM rdf.main.rdf_tables() GROUP BY kind ORDER BY kind",
+            [["column", 4], ["foreign_key", 1], ["table", 2]],
+        ),
+        demo_example(
+            TABLE_GRAPH_SIZES_DESCRIPTION,
+            TABLE_GRAPH_SIZES_SQL,
+            [["main", "orders", 12], ["main", "people", 12]],
+        ),
+        demo_example(FOREIGN_KEY_EDGES_DESCRIPTION, FOREIGN_KEY_EDGES_SQL, [["main", "orders", "people", 3]]),
     ],
 )
 graph_metadata(
@@ -335,8 +362,21 @@ graph_metadata(
     "Read an existing SQL table with ordinary typed columns plus __rdf_iri containing its stable RDF row IRI. "
     "Supply raw schema and table names separately. If a user column already has that name, underscores are appended "
     "until it is unique. Identities survive updates but disappear on DELETE; replacement tables get new identities. "
-    "Use these identifiers to join relational rows with graph queries. Requires a user-created table; the people "
-    "example assumes CREATE TABLE people(name `VARCHAR`) has already run.",
+    "Use these identifiers to join relational rows with graph queries. Requires a user-created table; the "
+    "executable examples create and roll back a small people/orders dataset first.",
+    executable=[
+        demo_example(
+            "Find the RDF row identity of each person",
+            "SELECT name, starts_with(__rdf_iri, 'urn:vgi:rdf:table:') AS has_row_iri "
+            "FROM rdf.main.rdf_rows('main', 'people') ORDER BY name",
+            [["Ada", True], ["Grace", True], ["Linus", True]],
+        ),
+        demo_example(
+            ROWS_WITH_INCOMING_EDGES_DESCRIPTION,
+            ROWS_WITH_INCOMING_EDGES_SQL,
+            [["Ada", 2], ["Grace", 1], ["Linus", 0]],
+        ),
+    ],
 )
 
 GRAPH_FUNCTIONS: list[type[Any]] = [RdfSparql, RdfTables, RdfRows]
@@ -419,10 +459,12 @@ class RdfNeighbors(TableFunctionGenerator[NeighborArgs, QueryState]):
 
         name = "rdf_neighbors"
         description = "Find outgoing or incoming RDF relationship edges for one node"
-        examples = [
+        # Row IRIs are generated, so a neighbor query with output needs data created in the same session;
+        # the executable examples do that.
+        examples: ClassVar[list[FunctionExample]] = [
             FunctionExample(
-                sql="SELECT count(*) AS edges FROM rdf.main.rdf_neighbors('urn:example:alice')",
-                description="Find the relationships of an example entity",
+                sql="SELECT count(*) AS edges FROM rdf.main.rdf_neighbors('urn:example:absent', direction := 'both')",
+                description="An IRI with no stored relationships has no neighbors, so this count is intentionally 0",
             )
         ]
 
@@ -457,10 +499,12 @@ class RdfReachable(TableFunctionGenerator[ReachArgs, QueryState]):
 
         name = "rdf_reachable"
         description = "Traverse RDF relationships with cycle detection and bounded minimum-depth results"
-        examples = [
+        # Row IRIs are generated, so a traversal with output needs data created in the same session;
+        # the executable examples do that.
+        examples: ClassVar[list[FunctionExample]] = [
             FunctionExample(
-                sql="SELECT count(*) AS nodes FROM rdf.main.rdf_reachable('urn:example:alice', max_depth := 3)",
-                description="Find entities up to three edges away from an example entity",
+                sql="SELECT count(*) AS nodes FROM rdf.main.rdf_reachable('urn:example:absent', max_depth := 3)",
+                description="An IRI with no stored relationships reaches no nodes, so this count is intentionally 0",
             )
         ]
 
@@ -491,11 +535,20 @@ graph_metadata(
     "Literals are not traversed. A default-graph edge has graph NULL. Results have no implicit ordering. "
     "max_rows, timeout_ms and deployment ceilings fail explicitly rather than truncate results.",
     executable=[
+        demo_example(
+            "Count the incoming foreign-key edges of Ada's row: her two orders",
+            "SELECT count(*) AS referencing_orders "
+            "FROM rdf.main.rdf_neighbors(getvariable('ada_iri'), direction := 'in')",
+            [[2]],
+            setup=(
+                "SET VARIABLE ada_iri = (SELECT __rdf_iri FROM rdf.main.rdf_rows('main', 'people') WHERE name = 'Ada')",
+            ),
+        ),
         {
             "sql": "SELECT count(*) FROM rdf.main.rdf_neighbors('urn:example:absent')",
-            "description": "An absent node has no neighbors",
+            "description": "An absent node has no neighbors, so the count is intentionally 0",
             "expected_result": [[0]],
-        }
+        },
     ],
 )
 graph_metadata(
@@ -507,11 +560,21 @@ graph_metadata(
     "Traversal has row, examined-edge and wall-time limits; exceeding a limit raises an error. "
     "Order results explicitly, for example ORDER BY depth, node.",
     executable=[
+        demo_example(
+            "Count nodes by distance from order 10: its buyer Ada at depth 1 and Ada's other order at depth 2",
+            "SELECT depth, count(*) AS nodes "
+            "FROM rdf.main.rdf_reachable(getvariable('order_10_iri'), direction := 'both', max_depth := 3) "
+            "GROUP BY depth ORDER BY depth",
+            [[1, 1], [2, 1]],
+            setup=(
+                "SET VARIABLE order_10_iri = (SELECT __rdf_iri FROM rdf.main.rdf_rows('main', 'orders') WHERE id = 10)",
+            ),
+        ),
         {
             "sql": "SELECT count(*) FROM rdf.main.rdf_reachable('urn:example:absent', max_depth := 3)",
-            "description": "An absent node has no reachable neighbors",
+            "description": "An absent node has no reachable neighbors, so the count is intentionally 0",
             "expected_result": [[0]],
-        }
+        },
     ],
 )
 GRAPH_FUNCTIONS.extend([RdfNeighbors, RdfReachable])
