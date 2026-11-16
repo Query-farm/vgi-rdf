@@ -6,7 +6,7 @@ Version 0.2 targets a single host with local durable storage and authenticated c
 
 ## Run locally
 
-Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/). The lockfile pins the tested dependencies.
+Requires Python 3.14+ and [uv](https://docs.astral.sh/uv/). The lockfile pins the tested dependencies.
 
 ```sh
 git clone https://github.com/Query-farm/vgi-rdf.git

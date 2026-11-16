@@ -81,7 +81,7 @@ def http_server(root: Path, token: str, *, read_only: bool = False) -> Iterator[
                 if error.code == 401:
                     break
                 raise
-            except (urllib.error.URLError, TimeoutError):
+            except urllib.error.URLError, TimeoutError:
                 time.sleep(0.05)
         else:
             raise AssertionError("HTTP server did not become ready")

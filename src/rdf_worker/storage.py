@@ -328,7 +328,7 @@ class Database:
                     try:
                         with FileLock(path / "transaction.lock", timeout=0):
                             shutil.rmtree(path)
-                    except (Timeout, PermissionError):
+                    except Timeout, PermissionError:
                         pass  # Windows may defer deleting an open lock file until a later vacuum.
             ancestry = set()
             ancestor = self.current()["generation"]

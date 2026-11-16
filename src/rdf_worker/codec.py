@@ -44,7 +44,7 @@ def encode(value: pa.Scalar[Any]) -> Literal | None:
     if not (pa.types.is_nested(data_type) or pa.types.is_interval(data_type) or pa.types.is_duration(data_type)):
         try:
             item = value.as_py()
-        except (OverflowError, ValueError):
+        except OverflowError, ValueError:
             return _arrow_literal(value)
     if pa.types.is_string(data_type) or pa.types.is_large_string(data_type):
         return Literal(item)

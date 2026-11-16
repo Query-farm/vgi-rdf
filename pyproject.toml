@@ -5,7 +5,7 @@ description = "Transactional RDF-backed SQL tables, SPARQL queries and graph tra
 readme = "README.md"
 license = "0BSD"
 license-files = ["LICENSE"]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "duckdb==2.0.0",
     "filelock>=3.20,<4",
@@ -40,7 +40,7 @@ packages = ["src/rdf_worker"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF", "D"]
@@ -53,7 +53,7 @@ ignore = ["D203", "D213", "RUF012"]
 
 [tool.mypy]
 strict = true
-python_version = "3.13"
+python_version = "3.14"
 files = ["src", "tests", "examples"]
 
 [[tool.mypy.overrides]]
