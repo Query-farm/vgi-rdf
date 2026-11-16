@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4 (2026-11-16)
+
+- Bump vgi-python to 0.52.2.
+- Requires Python 3.14 (CI, Docker image and tooling moved to 3.14).
+
 ## 0.2.3
 
 - Docs link to upstream: the catalog documentation now links Oxigraph, pyoxigraph, W3C RDF 1.1 Concepts and SPARQL 1.1 Query (vgi-lint VGI183).
