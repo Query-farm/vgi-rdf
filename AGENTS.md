@@ -169,7 +169,7 @@ in the vgi-python docs.
 
 The product entry point is `rdf_worker.worker`; starter regression examples run through
 `rdf_worker.starter`. Keep both test suites. `make test-unit` includes real stock DuckDB
-2.0.0 tests, while `make test-sql` uses Haybarn 2.0.0rc11; do not conflate them.
+2.0.0 tests, while `make test-sql` uses Haybarn 2.0.1rc3; do not conflate them.
 
 Persisted application data and definitions must remain RDF. `duckdb` inside model.py
 is an ephemeral SQL constraint evaluator, not a second persistent data store. Preserve

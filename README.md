@@ -44,9 +44,11 @@ DETACH rdf;
 
 Run the SQL client from this checkout for this development launch. `database` is a **directory on the worker's machine**, not a Turtle file. Omitting it uses `VGI_RDF_DATABASE` if set; otherwise the worker creates an isolated temporary database and removes it on `DETACH`. Persistent directories survive worker restarts and reattachment.
 
-In **Haybarn 2.0.0rc11**, install/load the extension with `INSTALL vgi FROM community; LOAD vgi;`, then use the same `ATTACH`. Run `FORCE INSTALL` from the appropriate repository if a stale installed extension speaks an older protocol.
+In **Haybarn 2.0.1rc3**, install/load the extension with `INSTALL vgi FROM community; LOAD vgi;`, then use the same `ATTACH`. Run `FORCE INSTALL` from the appropriate repository if a stale installed extension speaks an older protocol.
 
 Attach an existing store with `read_only true` to reject all table, schema, and row mutations. Worker stdout is reserved for Arrow IPC; diagnostics go to stderr.
+
+vgi-rdf 0.3.0 speaks VGI protocol 3.4, so it needs Haybarn 2.0.1 or newer (Haybarn 2.0.0 loads a 3.3 `vgi` extension that cannot attach it).
 
 ## SQL behavior
 
@@ -279,7 +281,7 @@ In Compose, prefix commands with `docker compose --env-file deploy/.env -f deplo
 
 - All six requested SQL operations are tested through real VGI engines. Primary/unique checks use RDF hash indexes and exact SQL comparisons. Foreign-key validation and parent updates/deletes can still materialize referenced/dependent tables. DDL constraint validation and integrity checks also need full bounded table reads.
 - SQL predicates run in the host. The installed SDK's optional filter evaluator imports Haybarn, which conflicts with the stock DuckDB native library used for constraints; the worker deliberately does not load both. Point lookups still scan projected columns. High write concurrency, low-latency point serving and larger datasets need workload-specific capacity tests.
-- Stock DuckDB 2.0.0 lacks `GetDeleteReturningVirtualColumns`, so `DELETE … RETURNING` is rejected by its binder. Plain DELETE works. The Haybarn 2.0.0rc11 SQL suite tests DELETE RETURNING successfully.
+- Stock DuckDB 2.0.0 lacks `GetDeleteReturningVirtualColumns`, so `DELETE … RETURNING` is rejected by its binder. Plain DELETE works. The Haybarn 2.0.1rc3 SQL suite tests DELETE RETURNING successfully.
 - Both tested engines reject native canonical `CHECK` definitions before calling the worker. CHECK enforcement and canonical constraint mutations are tested through the backend/catalog API, not claimed as passing native SQL CHECK support.
 - The current VGI Arrow bridge exposes `HUGEINT` as `DECIMAL(38,0)`; values beyond 38 decimal digits cannot be transported by that mapping. The type tests exercise the supported range, not the entire 128-bit integer domain.
 - Self-referencing foreign keys, cascading referential actions, deferred constraints, nested-field constraints, generated columns, SQL time travel, arbitrary ALTER COLUMN operations, views, user indexes, custom table layouts and arbitrary SPARQL mutations are not implemented. Unsupported operations fail explicitly.
@@ -295,7 +297,7 @@ One-pass scan materialization reduced this workload's aggregate scan from 12.63 
 ```sh
 make check                 # formatting, static typing, docstrings, pytest, all SQL transports, metadata
 make test-unit             # codec/storage/catalog tests and stock-DuckDB integration tests
-make test-sql               # Haybarn 2.0.0rc11 SQLLogicTest suite over stdio
+make test-sql               # Haybarn 2.0.1rc3 SQLLogicTest suite over stdio
 make test-sql TRANSPORT=launch
 make test-sql TRANSPORT=http
 make test-examples          # asserted SQL/graph demonstration
@@ -303,7 +305,7 @@ make test-container         # authenticated production-image lifecycle test
 make lint-explain
 ```
 
-Pytest includes real stock **DuckDB 2.0.0**, loading the signed VGI extension from `query_farm`. SQLLogicTest uses **Haybarn 2.0.0rc11**, loading VGI from `community`, over stdio, launch and HTTP. These are reported separately. Tests use disposable data, not the example directory. Engine/extension installation requires network access; data fixtures themselves are local.
+Pytest includes real stock **DuckDB 2.0.0**, loading the signed VGI extension from `query_farm`. SQLLogicTest uses **Haybarn 2.0.1rc3**, loading VGI from `community`, over stdio, launch and HTTP. These are reported separately. Tests use disposable data, not the example directory. Engine/extension installation requires network access; data fixtures themselves are local.
 
 Tests cover CRUD, CTAS, defaults, empty results, NULLs, duplicate rows, multiple batches, returned rows, joins, windows, type round trips, constraints, rollback, concurrent clients, worker/process restart, authenticated/read-only HTTP, path confinement, RDF export, scan stability, backup, vacuum and interrupted commit recovery. Graph tests cover SPARQL result forms/terms, property paths, identity joins, foreign-key edge maintenance, traversal cycles/limits, import rollback and protected graphs. Fault tests cover process death, disk-full receipt failure, hash collisions, stale leases, scan limits and integrity corruption. The original starter tests remain under a separate example worker; the product catalog does not expose the greeting/REST demonstrations.
 

@@ -19,7 +19,7 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY src ./src
-RUN uv export --locked --no-dev --no-emit-project --format requirements-txt > /tmp/requirements.txt \
+RUN uv export --locked --no-dev --extra serve --no-emit-project --format requirements-txt > /tmp/requirements.txt \
     && uv pip sync --system /tmp/requirements.txt \
     && uv pip install --system --no-deps . \
     && rm /usr/local/bin/uv /tmp/requirements.txt
@@ -31,5 +31,5 @@ USER worker
 COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
-    CMD python -c "import os,urllib.request;urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"PORT\",\"8000\")}/health',timeout=2)"
+    CMD python -c "import os,urllib.request;urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{os.environ.get(\"PORT\",\"8000\")}/health',method='HEAD'),timeout=2)"
 ENTRYPOINT ["docker-entrypoint.sh"]
