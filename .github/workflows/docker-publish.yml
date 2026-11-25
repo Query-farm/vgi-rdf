@@ -4,6 +4,8 @@ name: Publish image
 # The shared workflow smoke-tests /health before an explicitly requested publication.
 
 on:
+  push:
+    tags: ['v*.*.*']
   workflow_dispatch:
 
 permissions:
