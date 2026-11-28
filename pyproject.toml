@@ -1,6 +1,6 @@
 [project]
 name = "vgi-rdf-worker"
-version = "0.3.0"
+version = "0.3.1"
 description = "Transactional RDF-backed SQL tables, SPARQL queries and graph traversal through VGI."
 readme = "README.md"
 license = "0BSD"

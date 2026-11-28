@@ -54,4 +54,6 @@ jobs:
       image_name: vgi-rdf-worker
       smoke_import: "rdf_worker, vgi, pyarrow"
       health_port: "8000"
+      # The worker refuses unauthenticated network listeners; give the boot smoke a throwaway token.
+      http_run_args: "-e VGI_BEARER_TOKENS=ci-smoke-only"
       version_check_cmd: "ci/check-version.sh"

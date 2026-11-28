@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (2026-11-28)
+
+- Docker images are built and published on release tags again (0.3.0 got none). The image boot
+  smoke test passes a throwaway `VGI_BEARER_TOKENS`, since the worker refuses unauthenticated
+  network listeners. No code changes.
+
 ## 0.3.0 (2026-11-25)
 
 - Speaks VGI protocol 3.4: require vgi-python `>=0.55.2,<0.56`; uv.lock re-locked. This release
